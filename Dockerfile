@@ -5,10 +5,13 @@ FROM node:18
 WORKDIR /ProyRH
 
 # Copia los archivos package.json y package-lock.json para el frontend
-COPY . .
+COPY package*.json ./
 
 # Instala las dependencias del frontend
 RUN npm install
+
+# Copia el resto del código del frontend
+COPY . .
 
 # Construye la aplicación frontend
 RUN npm run build --prefix control-horario
@@ -23,13 +26,10 @@ COPY control-horario-backend/package*.json ./
 RUN npm install
 
 # Copia todo el código de la aplicación al contenedor
-COPY . /ProyRH
+COPY control-horario-backend/ /ProyRH/control-horario-backend/
 
 # Exponer el puerto que usará la aplicación backend
 EXPOSE 3001
-
-# Expon el puerto en el que se ejecutará la aplicación
-EXPOSE 3000
 
 # Comando para ejecutar la aplicación backend
 CMD ["npm", "start", "--prefix", "control-horario-backend"]

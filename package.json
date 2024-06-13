@@ -1,8 +1,21 @@
 {
-  
+  
   "version": "1.0.0",
+  
   "scripts": {
-    "start": "npm --prefix control-horario-backend start",
-    "build": "npm --prefix control-horario run build"
+  
+    
+  "start": "npm --prefix control-horario-backend start",
+  
+    
+  "build": "npm --prefix control-horario run build"
+  
+  },
+  
+  "devDependencies": {
+  
+    
+  "cross-env": "^7.0.3"
+  
   }
 }
