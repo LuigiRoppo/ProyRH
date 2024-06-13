@@ -1,0 +1,45 @@
+.form-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.form-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.form-title {
+    margin-bottom: 20px; /* Espacio inferior para el título */
+}
+
+.form-element {
+    margin-top: 10px; /* Espacio superior */
+    margin-bottom: 10px; /* Espacio inferior */
+    padding: 8px;
+    width: 50%; /* Ajusta el ancho de los elementos */
+    box-sizing: border-box;
+}
+
+.button {
+    padding: 10px 20px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    text-align: center;
+    margin-top: 10px; /* Añadido para separar el botón del input */
+}
+
+.button:hover {
+    background-color: #0056b3;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}

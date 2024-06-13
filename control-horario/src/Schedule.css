@@ -1,0 +1,37 @@
+.schedule-container {
+    text-align: center;
+    margin: 0 auto;
+  }
+  
+  .schedule-container h2 {
+    margin-bottom: 20px;
+  }
+  
+  .schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 auto;
+  }
+  
+  .schedule-table th, .schedule-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+  
+  .schedule-table th {
+    background-color: #ff9800;
+    color: white;
+    text-align: center;
+  }
+  
+  .schedule-table td {
+    text-align: center;
+    vertical-align: middle;
+  }
+  
+  .schedule-table .checked {
+    color: #ff9800;
+    font-weight: bold;
+    font-size: 1.2em;
+  }
+  
