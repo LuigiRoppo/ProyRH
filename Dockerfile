@@ -30,8 +30,12 @@ COPY control-horario-backend/package*.json ./
 # Instala las dependencias del backend
 RUN npm install
 
-# Copia todo el código del backend al contenedor
+# Copia todo el código del backend al contenedor, incluyendo knexfile.js y .env
 COPY control-horario-backend/ .
+COPY control-horario-backend/knexfile.js ./
+
+# Instala dotenv para cargar variables de entorno
+RUN npm install dotenv
 
 # Exponer el puerto que usará la aplicación backend
 EXPOSE 3001
