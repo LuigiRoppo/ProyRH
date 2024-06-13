@@ -13,8 +13,17 @@ RUN npm install
 # Copia el resto del código del frontend
 COPY . .
 
+# Cambia al directorio de control-horario
+WORKDIR /ProyRH/control-horario
+
+# Copia los archivos package.json y package-lock.json para control-horario
+COPY control-horario/package*.json ./
+
+# Instala las dependencias de control-horario
+RUN npm install
+
 # Construye la aplicación frontend
-RUN npm run build --prefix control-horario
+RUN npm run build
 
 # Establece el directorio de trabajo para el backend
 WORKDIR /ProyRH/control-horario-backend
