@@ -1,0 +1,8 @@
+{
+  
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npm --prefix control-horario-backend start",
+    "build": "npm --prefix control-horario run build"
+  }
+}
