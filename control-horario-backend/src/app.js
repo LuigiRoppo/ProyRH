@@ -13,9 +13,6 @@ console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 // Configuración de CORS
 const allowedOrigins = [
-    'https://control-horario-deploy-itdt.vercel.app',
-    'https://control-horario-deploy-itdt-git-main-luigiroppos-projects.vercel.app',
-    'https://control-horario-deploy-itdt-36s7nqg4f-luigiroppos-projects.vercel.app',
     'https://proy-rh-vert.vercel.app',
     'https://proy-rh-git-main-luigiroppos-projects.vercel.app',
     'https://proy-51r2va3mo-luigiroppos-projects.vercel.app'
