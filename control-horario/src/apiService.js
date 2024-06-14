@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // URL base del backend
-const BASE_URL = process.env.REACT_APP_API_URL || 'https://control-horario-backend-production.up.railway.app';
+const BASE_URL = process.env.REACT_APP_API_URL || 'https://proyrh-production.up.railway.app';
 
 // Funciones de Empleados
 export const getEmpleados = async () => {
