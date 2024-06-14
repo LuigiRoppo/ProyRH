@@ -30,9 +30,11 @@ COPY control-horario-backend/package*.json ./
 # Instala las dependencias del backend
 RUN npm install
 
-# Copia todo el código del backend al contenedor, incluyendo knexfile.js y .env
+# Copia todo el código del backend al contenedor, incluyendo knexfile.js, .env y el directorio de migraciones
 COPY control-horario-backend/ .
 COPY control-horario-backend/knexfile.js ./
+COPY control-horario-backend/.env ./
+COPY control-horario-backend/migrations ./migrations
 
 # Instala dotenv para cargar variables de entorno
 RUN npm install dotenv
