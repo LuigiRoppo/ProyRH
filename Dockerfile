@@ -38,3 +38,11 @@ EXPOSE 3001
 
 # Comando para ejecutar la aplicación backend
 CMD ["npm", "start"]
+
+
+
+# Agregar script de verificación de conexión
+RUN apt-get update && apt-get install -y postgresql-client
+COPY check-db.sh /usr/local/bin/check-db.sh
+RUN chmod +x /usr/local/bin/check-db.sh
+CMD ["check-db.sh"]
