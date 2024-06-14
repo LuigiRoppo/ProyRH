@@ -1,7 +1,7 @@
-require('dotenv').config(); // Cargar las variables de entorno desde .env
+require('dotenv').config(); 
 const express = require('express');
 const cors = require('cors');
-const { Client } = require('pg'); // Asegúrate de que estás importando correctamente
+const { Client } = require('pg'); 
 const bodyParser = require('body-parser');
 const moment = require('moment-timezone');
 
