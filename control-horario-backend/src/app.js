@@ -46,17 +46,19 @@ const client = new Client({
 });
 
 // Probar conexión a la base de datos
-client.connect((err) => {
+client.connect(err => {
     if (err) {
-        return console.error('Error adquiriendo cliente', err.stack);
-    }
-    client.query('SELECT NOW()', (err, result) => {
+      console.error('Error acquiring client', err.stack);
+    } else {
+      client.query('SELECT NOW()', (err, result) => {
         if (err) {
-            return console.error('Error ejecutando query', err.stack);
+          console.error('Error executing query', err.stack);
+        } else {
+          console.log(result.rows);
         }
-        console.log(result.rows);
-    });
-});
+      });
+    }
+  });
 
 // Rutas
 app.get('/empleados', async (req, res) => {
