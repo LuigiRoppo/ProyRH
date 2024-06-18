@@ -15,7 +15,7 @@ console.log('DATABASE_URL:', process.env.DATABASE_URL);
 const allowedOrigins = [
     'https://proyrh.vercel.app',
     'https://proyrh-git-main-luigiroppos-projects.vercel.app',
-    'https://proyrh-garoqqtoe-luigiroppos-projects.vercel.app'
+    'https://proyrh-6qz2rzqr6-luigiroppos-projects.vercel.app'
 ];
 
 app.use(cors({
