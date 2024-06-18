@@ -12,7 +12,16 @@
     }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "control-horario-backend/src/app.js" },
+    { "src": "/empleados", "dest": "control-horario-backend/src/app.js" },
+    { "src": "/horarios", "dest": "control-horario-backend/src/app.js" },
+    { "src": "/ultimo-registro/(.*)", "dest": "control-horario-backend/src/app.js" },
+    { "src": "/registros/(.*)", "dest": "control-horario-backend/src/app.js" },
+    { "src": "/overtime/(.*)", "dest": "control-horario-backend/src/app.js" },
+    { "src": "/marcar-entrada", "dest": "control-horario-backend/src/app.js" },
+    { "src": "/marcar-salida", "dest": "control-horario-backend/src/app.js" },
+    { "src": "/horarios", "dest": "control-horario-backend/src/app.js" },
+    { "src": "/empleados", "dest": "control-horario-backend/src/app.js" },
+    { "src": "/registros-horarios", "dest": "control-horario-backend/src/app.js" },
     { "src": "/(.*)", "dest": "control-horario/build/$1" }
   ]
 }
