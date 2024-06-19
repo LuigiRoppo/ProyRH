@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createEmpleado } from './apiService'; // Importar la función desde apiService.js
+import { createEmpleado } from './apiService'; 
 import './CreateEmployeeForm.css';
 
 function CreateEmployeeForm() {
@@ -11,7 +11,7 @@ function CreateEmployeeForm() {
     const handleSubmit = async (event) => {
         event.preventDefault();
         try {
-            await createEmpleado({ nombre, ubicacion }); // Usar la función de apiService
+            await createEmpleado({ nombre, ubicacion }); 
             alert('Empleado creado con éxito');
             setNombre('');
             setUbicacion('');
@@ -38,11 +38,11 @@ function CreateEmployeeForm() {
                 required
                 className="form-element"
             >
-                <option value="">Seleccione una Ubicación</option>
-                <option value="Ubicación 1">Ubicación 1</option>
-                <option value="Ubicación 2">Ubicación 2</option>
-                <option value="Ubicación 3">Ubicación 3</option>
-                <option value="Ubicación 4">Ubicación 4</option>
+                <option value="">Seleccione una Ubicacion </option>
+                <option value="Ubicacion 1">Ubicacion  1</option>
+                <option value="Ubicacion  2">Ubicacion  2</option>
+                <option value="Ubicacion  3">Ubicacion  3</option>
+                <option value="Ubicacion  4">Ubicacion  4</option>
             </select>
             <div className="button-group">
                 <button type="submit" className="button">Crear Empleado</button>

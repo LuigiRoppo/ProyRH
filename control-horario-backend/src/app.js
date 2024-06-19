@@ -302,12 +302,14 @@ app.post('/empleados', async (req, res) => {
     const { nombre, ubicacion } = req.body;
 
     try {
-        const result = await client.query('INSERT INTO empleados (nombre, ubicacion) VALUES ($1, $2) RETURNING id', [nombre, ubicacion]);
+        const id = await generateUniqueId();
+        const result = await client.query('INSERT INTO empleados (id, nombre, ubicacion) VALUES ($1, $2, $3) RETURNING id', [id, nombre, ubicacion]);
         res.send({ message: 'Empleado creado con éxito', id: result.rows[0].id });
     } catch (err) {
         res.status(500).send({ error: err.message });
     }
 });
+
 
 app.post('/registros-horarios', async (req, res) => {
     const { id_empleado, fecha, hora_entrada, hora_salida } = req.body;
