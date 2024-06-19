@@ -2,16 +2,16 @@
 FROM node:18
 
 # Establece el directorio de trabajo para el frontend
-WORKDIR /ProyRH/control-horario
+WORKDIR /app
 
 # Copia los archivos package.json y package-lock.json para el frontend
-COPY control-horario/package*.json ./
+COPY package.json package-lock.json ./
 
 # Instala las dependencias del frontend
 RUN npm install
 
 # Copia el resto del código del frontend
-COPY control-horario/ .
+COPY . .
 
 # Construye la aplicación frontend
 RUN npm run build
