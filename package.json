@@ -5,7 +5,8 @@
     "start:frontend": "npm --prefix control-horario start",
     "build:frontend": "npm --prefix control-horario run build",
     "start:backend": "npm --prefix control-horario-backend start",
-    "migrate:backend": "npm --prefix control-horario-backend run migrate"
+    "migrate:backend": "npm --prefix control-horario-backend run migrate",
+    "start": "npm run build:frontend && npm run start:backend"
   },
   "devDependencies": {
     "cross-env": "^7.0.3"

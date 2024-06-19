@@ -1,48 +1,33 @@
-# Usa una imagen base oficial de Node.js
-FROM node:18
+# Etapa 1: Construcción del frontend
+FROM node:18 AS build
 
-# Establece el directorio de trabajo para el frontend
-WORKDIR /ProyRH
+WORKDIR /app/frontend
 
-# Copia los archivos package.json y package-lock.json para el frontend
-COPY package.json package-lock.json ./
-
-# Instala las dependencias del frontend
-RUN npm install
-
-# Copia el resto del código del frontend
-COPY . .
-
-# Cambia al directorio de control-horario y copia sus archivos package.json y package-lock.json
-WORKDIR /ProyRH/control-horario
+# Copiar archivos de configuración del frontend
 COPY control-horario/package*.json ./
-
-# Instala las dependencias de control-horario
 RUN npm install
 
-# Construye la aplicación frontend
+# Copiar el resto del código del frontend y construir
+COPY control-horario ./
 RUN npm run build
 
-# Cambia al directorio de control-horario-backend y copia sus archivos package.json y package-lock.json
-WORKDIR /ProyRH/control-horario-backend
-COPY control-horario-backend/package*.json ./
+# Etapa 2: Configuración del backend
+FROM node:18
 
-# Instala las dependencias del backend
+WORKDIR /app/backend
+
+# Copiar archivos de configuración del backend
+COPY control-horario-backend/package*.json ./
 RUN npm install
 
-# Copia el resto del código del backend al contenedor
-COPY control-horario-backend/ .
+# Copiar el código del backend
+COPY control-horario-backend ./
+
+# Copiar el build del frontend al directorio público del backend
+COPY --from=build /app/frontend/build ./public
 
 # Exponer el puerto que usará la aplicación backend
 EXPOSE 3001
 
 # Comando para ejecutar la aplicación backend
 CMD ["npm", "start"]
-
-
-
-# Agregar script de verificación de conexión
-RUN apt-get update && apt-get install -y postgresql-client
-COPY check-db.sh /usr/local/bin/check-db.sh
-RUN chmod +x /usr/local/bin/check-db.sh
-CMD ["check-db.sh"]
