@@ -1,23 +1,21 @@
+# Usa una imagen base oficial de Node.js
 FROM node:18
 
 # Establece el directorio de trabajo para el frontend
-WORKDIR /app
+WORKDIR /ProyRH/control-horario
 
-# Copia los archivos package.json y package-lock.json para la instalación de dependencias del frontend
-COPY package*.json ./
+# Copia los archivos package.json y package-lock.json para el frontend
+COPY control-horario/package*.json ./
 
 # Instala las dependencias del frontend
 RUN npm install
 
-# Copia el resto del código del frontend al contenedor
-COPY . .
+# Copia el resto del código del frontend
+COPY control-horario/ .
 
 # Construye la aplicación frontend
 RUN npm run build
 
-# Servir la aplicación
+# Servir la aplicación frontend
 RUN npm install -g serve
 CMD ["serve", "-s", "build"]
-
-# Exponer el puerto que usará la aplicación frontend
-EXPOSE 3000

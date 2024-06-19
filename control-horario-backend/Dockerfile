@@ -1,16 +1,17 @@
+# Usa una imagen base oficial de Node.js
 FROM node:18
 
 # Establece el directorio de trabajo para el backend
-WORKDIR /app
+WORKDIR /ProyRH/control-horario-backend
 
-# Copia los archivos package.json y package-lock.json para la instalación de dependencias del backend
-COPY package*.json ./
+# Copia los archivos package.json y package-lock.json para el backend
+COPY control-horario-backend/package*.json ./
 
 # Instala las dependencias del backend
 RUN npm install
 
-# Copia el resto del código del backend al contenedor
-COPY . .
+# Copia el resto del código del backend
+COPY control-horario-backend/ .
 
 # Exponer el puerto que usará la aplicación backend
 EXPOSE 3001
