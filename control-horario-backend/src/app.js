@@ -13,9 +13,9 @@ console.log('DATABASE_URL:', process.env.DATABASE_URL);
 
 // Configuración de CORS
 const allowedOrigins = [
-    'https://proy-rh.vercel.app',
-    'https://proy-rh-luigiroppos-projects.vercel.app',
-    'https://proy-82l6b3cek-luigiroppos-projects.vercel.app'
+    'https://proyrh-production.up.railway.app',
+    'https://intuitive-solace-production.up.railway.app',
+    'http://localhost:3000'
 ];
 
 app.use(cors({
