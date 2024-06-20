@@ -260,45 +260,63 @@ app.post('/marcar-salida', async (req, res) => {
     console.log(`Intentando marcar salida para el registro con ID: ${id_registro}`);
 
     try {
-        const registro = await client.query('SELECT id_empleado, fecha FROM registros_horarios WHERE id_registro = $1', [id_registro]);
-
-        if (registro.rows.length === 0) {
+        // Obtener registro de la base de datos
+        const registroResult = await client.query('SELECT id_empleado, fecha FROM registros_horarios WHERE id_registro = $1', [id_registro]);
+        if (registroResult.rows.length === 0) {
             console.log("No se encontró el registro con ID:", id_registro);
             return res.status(404).send({ message: 'Registro no encontrado' });
         }
 
-        console.log(`Registro encontrado: ${JSON.stringify(registro.rows[0])}`);
+        const registro = registroResult.rows[0];
+        console.log(`Registro encontrado: ${JSON.stringify(registro)}`);
 
+        // Obtener el día de la semana
         const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
-        const diaSemana = new Date(registro.rows[0].fecha).getDay();
+        const diaSemana = new Date(registro.fecha).getDay();
         const diaNombre = diaIndices[diaSemana];
 
-        const horario = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [registro.rows[0].id_empleado, diaNombre]);
-
-        if (horario.rows.length === 0) {
-            console.log("No se encontró horario para el empleado", registro.rows[0].id_empleado, "el día", diaNombre);
+        // Obtener el horario correspondiente
+        const horarioResult = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [registro.id_empleado, diaNombre]);
+        if (horarioResult.rows.length === 0) {
+            console.log("No se encontró horario para el empleado", registro.id_empleado, "el día", diaNombre);
             return res.status(404).send({ message: 'Horario no encontrado para el empleado' });
         }
 
-        console.log(`Horario encontrado: ${JSON.stringify(horario.rows[0])}`);
+        const horario = horarioResult.rows[0];
+        console.log(`Horario encontrado: ${JSON.stringify(horario)}`);
 
+        // Verificar la hora actual y la hora permitida para marcar salida
         const ahora = moment().tz('Europe/Madrid');
-        const horaFinPermitida = horario.rows[0].hora_fin === "00:00"
-            ? moment(`${registro.rows[0].fecha}T23:59:59`).add(1, 'minutes').tz('Europe/Madrid')
-            : moment(`${registro.rows[0].fecha}T${horario.rows[0].hora_fin}`).add(1, 'minutes').tz('Europe/Madrid');
+        const horaFinPermitida = horario.hora_fin === "00:00"
+            ? moment(`${registro.fecha}T23:59:59`).add(1, 'minutes').tz('Europe/Madrid')
+            : moment(`${registro.fecha}T${horario.hora_fin}`).add(1, 'minutes').tz('Europe/Madrid');
 
+        console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
+        console.log(`Hora fin permitida: ${horaFinPermitida.format('HH:mm:ss')}`);
+
+        // Verificar si la hora actual está dentro del horario permitido
         if (ahora.isSameOrBefore(horaFinPermitida)) {
             const horaSalida = ahora.format('HH:mm:ss');
-            await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
-            res.send({ message: 'Salida marcada con éxito' });
+            console.log(`Marcando salida a las: ${horaSalida}`);
+
+            const updateResult = await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
+            if (updateResult.rowCount > 0) {
+                console.log('Salida marcada con éxito');
+                res.send({ message: 'Salida marcada con éxito' });
+            } else {
+                console.error('Error al actualizar el registro de salida');
+                res.status(500).send({ message: 'Error al marcar la salida' });
+            }
         } else {
-            res.status(403).send({ message: 'No se permite marcar salida después de las ' + horaFinPermitida.format('HH:mm') });
+            console.log('No se permite marcar salida después de las', horaFinPermitida.format('HH:mm:ss'));
+            res.status(403).send({ message: 'No se permite marcar salida después de las ' + horaFinPermitida.format('HH:mm:ss') });
         }
     } catch (err) {
         console.error("Error en la consulta del registro:", err.message);
         res.status(500).send({ error: err.message });
     }
 });
+
 
 
 

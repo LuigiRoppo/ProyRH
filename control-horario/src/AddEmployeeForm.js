@@ -29,7 +29,7 @@ function AddEmployeeForm() {
         const fecha = now.format('YYYY-MM-DD');
         const diasSemana = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
         const diaSemana = diasSemana[now.day()]; 
-    
+        
         try {
             const horarioArray = await getHorarioByEmpleadoId(employeeId);
             console.log('Horario:', horarioArray);
@@ -51,7 +51,7 @@ function AddEmployeeForm() {
                         id_empleado: employeeId,
                         fecha
                     });
-                    setIdRegistro(entradaRespuesta.id_registro); 
+                    setIdRegistro(entradaRespuesta.id); 
                     alert('Hora de entrada registrada con éxito');
                     resetForm();
                 } else {
@@ -65,6 +65,7 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación, Debes marcar dentro del Horario Establecido! ;)');
         }
     };
+    
     
     const handleSalida = async () => {
         if (!employeeId) {
