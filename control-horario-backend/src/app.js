@@ -234,14 +234,14 @@ app.post('/marcar-entrada', async (req, res) => {
             console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
             console.log(`Hora de inicio permitida: ${horaInicioPermitida.format('HH:mm:ss')}`);
 
-            if (ahora.isSameOrAfter(horaInicioPermitida)) {
+            if (ahora.isSameOrAfter(horaInicioPermitida) && ahora.isBefore(moment(`${fecha}T${horario.hora_fin}`).tz('Europe/Madrid'))) {
                 const horaEntrada = ahora.format('HH:mm:ss');
-                await client.query('INSERT INTO registros_horarios (id_empleado, fecha, hora_entrada) VALUES ($1, $2, $3)', [id_empleado, fecha, horaEntrada]);
+                const result = await client.query('INSERT INTO registros_horarios (id_empleado, fecha, hora_entrada) VALUES ($1, $2, $3) RETURNING id', [id_empleado, fecha, horaEntrada]);
                 console.log('Entrada marcada con éxito para el empleado', id_empleado);
-                res.send({ message: 'Entrada marcada con éxito' });
+                res.send({ message: 'Entrada marcada con éxito', id: result.rows[0].id });
             } else {
-                console.log('No se permite marcar entrada antes de las', horario.hora_inicio);
-                res.status(403).send({ message: 'No se permite marcar entrada antes de las ' + horario.hora_inicio });
+                console.log('No se permite marcar entrada antes de las', horario.hora_inicio, 'o después de las', horario.hora_fin);
+                res.status(403).send({ message: 'No se permite marcar entrada antes de las ' + horario.hora_inicio + ' o después de las ' + horario.hora_fin });
             }
         } else {
             console.log('Horario no encontrado para el empleado', id_empleado);
