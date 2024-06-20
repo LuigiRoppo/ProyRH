@@ -283,22 +283,28 @@ app.post('/marcar-salida', async (req, res) => {
         console.log(`Horario encontrado: ${JSON.stringify(horario.rows[0])}`);
 
         const ahora = moment().tz('Europe/Madrid');
+        console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
         const horaFinPermitida = horario.rows[0].hora_fin === "00:00"
             ? moment(`${registro.rows[0].fecha}T23:59:59`).add(1, 'minutes').tz('Europe/Madrid')
             : moment(`${registro.rows[0].fecha}T${horario.rows[0].hora_fin}`).add(1, 'minutes').tz('Europe/Madrid');
+        console.log(`Hora fin permitida: ${horaFinPermitida.format('HH:mm:ss')}`);
 
         if (ahora.isSameOrBefore(horaFinPermitida)) {
             const horaSalida = ahora.format('HH:mm:ss');
-            await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
-            res.send({ message: 'Salida marcada con éxito' });
+            console.log(`Marcando salida a las: ${horaSalida}`);
+            const result = await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2 RETURNING id_registro, id_empleado, fecha, hora_entrada, hora_salida', [horaSalida, id_registro]);
+            console.log('Resultado de la actualización:', result.rows[0]);
+            res.send({ message: 'Salida marcada con éxito', registro: result.rows[0] });
         } else {
-            res.status(403).send({ message: 'No se permite marcar salida después de las ' + horaFinPermitida.format('HH:mm') });
+            console.log(`No se permite marcar salida después de las ${horaFinPermitida.format('HH:mm:ss')}`);
+            res.status(403).send({ message: 'No se permite marcar salida después de las ' + horaFinPermitida.format('HH:mm:ss') });
         }
     } catch (err) {
         console.error("Error en la consulta del registro:", err.message);
         res.status(500).send({ error: err.message });
     }
 });
+
 
 app.post('/horarios', async (req, res) => {
     const { idEmpleado, horarios } = req.body;

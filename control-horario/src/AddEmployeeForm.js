@@ -68,20 +68,18 @@ function AddEmployeeForm() {
         }
     };
 
-    
-    
-
     const handleSalida = async () => {
         if (!employeeId) {
             alert("Primero debe ingresar su ID de empleado.");
             return;
         }
-
+    
         try {
             console.log('Consultando último registro para empleado ID:', employeeId);
             const ultimoRegistro = await getUltimoRegistroByEmpleadoId(employeeId);
             console.log('Último registro obtenido:', ultimoRegistro);
             if (ultimoRegistro && !ultimoRegistro.hora_salida) {
+                console.log('Enviando solicitud para marcar salida con los datos:', { id_registro: ultimoRegistro.id_registro });
                 const salidaRespuesta = await marcarSalida({
                     id_registro: ultimoRegistro.id_registro
                 });
@@ -96,6 +94,8 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación de salida');
         }
     };
+    
+    
 
     const resetForm = () => {
         setEmployeeId('');

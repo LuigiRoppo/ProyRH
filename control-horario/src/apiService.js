@@ -130,11 +130,14 @@ export const marcarEntrada = async (registro) => {
     }
 };
 export const marcarSalida = async (registro) => {
+    console.log('Enviando datos a marcarSalida:', registro);
     try {
         const response = await axios.post(`${BASE_URL}/marcar-salida`, registro);
+        console.log('Respuesta del servidor:', response.data);
         return response.data;
     } catch (error) {
         console.error('Error al marcar salida:', error);
         throw error;
     }
 };
+
