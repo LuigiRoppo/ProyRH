@@ -236,9 +236,9 @@ app.post('/marcar-entrada', async (req, res) => {
 
             if (ahora.isSameOrAfter(horaInicioPermitida) && ahora.isBefore(moment(`${fecha}T${horario.hora_fin}`).tz('Europe/Madrid'))) {
                 const horaEntrada = ahora.format('HH:mm:ss');
-                const result = await client.query('INSERT INTO registros_horarios (id_empleado, fecha, hora_entrada) VALUES ($1, $2, $3) RETURNING id', [id_empleado, fecha, horaEntrada]);
+                const result = await client.query('INSERT INTO registros_horarios (id_empleado, fecha, hora_entrada) VALUES ($1, $2, $3) RETURNING id_registro', [id_empleado, fecha, horaEntrada]);
                 console.log('Entrada marcada con éxito para el empleado', id_empleado);
-                res.send({ message: 'Entrada marcada con éxito', id: result.rows[0].id });
+                res.send({ message: 'Entrada marcada con éxito', id: result.rows[0].id_registro });
             } else {
                 console.log('No se permite marcar entrada antes de las', horario.hora_inicio, 'o después de las', horario.hora_fin);
                 res.status(403).send({ message: 'No se permite marcar entrada antes de las ' + horario.hora_inicio + ' o después de las ' + horario.hora_fin });
@@ -252,6 +252,7 @@ app.post('/marcar-entrada', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 
 app.post('/marcar-salida', async (req, res) => {
     const { id_registro } = req.body;
