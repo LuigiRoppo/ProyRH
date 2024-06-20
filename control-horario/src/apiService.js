@@ -24,6 +24,7 @@ export const getEmpleadoById = async (id) => {
     }
 };
 
+
 export const createEmpleado = async (empleado) => {
     try {
         const response = await axios.post(`${BASE_URL}/empleados`, empleado);

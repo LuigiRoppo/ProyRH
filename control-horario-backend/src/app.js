@@ -71,6 +71,22 @@ app.get('/empleados', async (req, res) => {
     }
 });
 
+app.get('/empleados/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await client.query('SELECT * FROM empleados WHERE id = $1', [id]);
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.status(404).json({ message: 'Empleado no encontrado' });
+        }
+    } catch (error) {
+        console.error('Error fetching empleado:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
 // Verificar y actualizar registros pendientes
 const verificarYActualizarRegistrosPendientes = async () => {
     try {

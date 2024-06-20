@@ -25,6 +25,7 @@ const EmployeeDashboard = () => {
     }
   };
 
+
   const renderView = () => {
     switch (view) {
       case 'schedule':
