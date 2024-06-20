@@ -44,6 +44,7 @@ export const deleteEmpleado = async (id) => {
     }
 };
 
+
 // Funciones de Horarios
 export const getHorarios = async () => {
     try {
