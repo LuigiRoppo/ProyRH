@@ -120,14 +120,15 @@ export const getRegistrosByEmpleadoId = async (id, start, end) => {
 
 export const marcarEntrada = async (registro) => {
     try {
+        console.log('Enviando datos a marcarEntrada:', registro);
         const response = await axios.post(`${BASE_URL}/marcar-entrada`, registro);
+        console.log('Respuesta recibida de marcarEntrada:', response);
         return response.data;
     } catch (error) {
-        console.error('Error al marcar entrada:', error);
+        console.error('Error al marcar entrada:', error.response ? error.response.data : error.message);
         throw error;
     }
 };
-
 export const marcarSalida = async (registro) => {
     try {
         const response = await axios.post(`${BASE_URL}/marcar-salida`, registro);

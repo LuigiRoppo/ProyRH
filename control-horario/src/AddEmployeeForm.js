@@ -35,22 +35,24 @@ function AddEmployeeForm() {
             console.log('Horario:', horarioArray);
             const horariosDelDia = horarioArray.filter(h => h.dia_semana === diaSemana);
             console.log('Horarios del día:', horariosDelDia);
-    
+
             if (horariosDelDia.length > 0) {
                 const horario = horariosDelDia.reduce((earliest, current) => {
                     return moment(current.hora_inicio, 'HH:mm').isBefore(moment(earliest.hora_inicio, 'HH:mm')) ? current : earliest;
                 });
                 console.log('Horario seleccionado:', horario);
-    
+
                 const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(30, 'minutes').tz('Europe/Madrid');
                 console.log('Hora de inicio permitida:', horaInicioPermitida.format('HH:mm')); 
                 console.log('Hora actual:', now.format('HH:mm'));
-    
+
                 if (now.isSameOrAfter(horaInicioPermitida) && now.isBefore(moment(`${fecha}T${horario.hora_fin}`).tz('Europe/Madrid'))) {
+                    console.log('Enviando solicitud para marcar entrada con los datos:', { id_empleado: employeeId, fecha });
                     const entradaRespuesta = await marcarEntrada({
                         id_empleado: employeeId,
                         fecha
                     });
+                    console.log('Respuesta del servidor al marcar entrada:', entradaRespuesta);
                     setIdRegistro(entradaRespuesta.id); 
                     alert('Hora de entrada registrada con éxito');
                     resetForm();
@@ -65,6 +67,7 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación, Debes marcar dentro del Horario Establecido! ;)');
         }
     };
+
     
     
 
