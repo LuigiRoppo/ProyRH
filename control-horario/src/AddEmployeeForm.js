@@ -29,31 +29,29 @@ function AddEmployeeForm() {
         const fecha = now.format('YYYY-MM-DD');
         const diasSemana = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
         const diaSemana = diasSemana[now.day()]; 
-        
+    
         try {
             const horarioArray = await getHorarioByEmpleadoId(employeeId);
             console.log('Horario:', horarioArray);
             const horariosDelDia = horarioArray.filter(h => h.dia_semana === diaSemana);
             console.log('Horarios del día:', horariosDelDia);
-
+    
             if (horariosDelDia.length > 0) {
                 const horario = horariosDelDia.reduce((earliest, current) => {
                     return moment(current.hora_inicio, 'HH:mm').isBefore(moment(earliest.hora_inicio, 'HH:mm')) ? current : earliest;
                 });
                 console.log('Horario seleccionado:', horario);
-
+    
                 const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(30, 'minutes').tz('Europe/Madrid');
                 console.log('Hora de inicio permitida:', horaInicioPermitida.format('HH:mm')); 
                 console.log('Hora actual:', now.format('HH:mm'));
-
+    
                 if (now.isSameOrAfter(horaInicioPermitida) && now.isBefore(moment(`${fecha}T${horario.hora_fin}`).tz('Europe/Madrid'))) {
-                    console.log('Enviando solicitud para marcar entrada con los datos:', { id_empleado: employeeId, fecha });
                     const entradaRespuesta = await marcarEntrada({
                         id_empleado: employeeId,
                         fecha
                     });
-                    console.log('Respuesta del servidor al marcar entrada:', entradaRespuesta);
-                    setIdRegistro(entradaRespuesta.id); 
+                    setIdRegistro(entradaRespuesta.id_registro); 
                     alert('Hora de entrada registrada con éxito');
                     resetForm();
                 } else {
@@ -67,7 +65,7 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación, Debes marcar dentro del Horario Establecido! ;)');
         }
     };
-
+    
     const handleSalida = async () => {
         if (!employeeId) {
             alert("Primero debe ingresar su ID de empleado.");
@@ -79,7 +77,6 @@ function AddEmployeeForm() {
             const ultimoRegistro = await getUltimoRegistroByEmpleadoId(employeeId);
             console.log('Último registro obtenido:', ultimoRegistro);
             if (ultimoRegistro && !ultimoRegistro.hora_salida) {
-                console.log('Enviando solicitud para marcar salida con los datos:', { id_registro: ultimoRegistro.id_registro });
                 const salidaRespuesta = await marcarSalida({
                     id_registro: ultimoRegistro.id_registro
                 });
@@ -95,8 +92,6 @@ function AddEmployeeForm() {
         }
     };
     
-    
-
     const resetForm = () => {
         setEmployeeId('');
         setEmployeeName('');

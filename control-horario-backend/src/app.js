@@ -238,7 +238,7 @@ app.post('/marcar-entrada', async (req, res) => {
                 const horaEntrada = ahora.format('HH:mm:ss');
                 const result = await client.query('INSERT INTO registros_horarios (id_empleado, fecha, hora_entrada) VALUES ($1, $2, $3) RETURNING id_registro', [id_empleado, fecha, horaEntrada]);
                 console.log('Entrada marcada con éxito para el empleado', id_empleado);
-                res.send({ message: 'Entrada marcada con éxito', id: result.rows[0].id_registro });
+                res.send({ message: 'Entrada marcada con éxito', id_registro: result.rows[0].id_registro });
             } else {
                 console.log('No se permite marcar entrada antes de las', horario.hora_inicio, 'o después de las', horario.hora_fin);
                 res.status(403).send({ message: 'No se permite marcar entrada antes de las ' + horario.hora_inicio + ' o después de las ' + horario.hora_fin });
@@ -287,24 +287,20 @@ app.post('/marcar-salida', async (req, res) => {
             ? moment(`${registro.rows[0].fecha}T23:59:59`).add(1, 'minutes').tz('Europe/Madrid')
             : moment(`${registro.rows[0].fecha}T${horario.rows[0].hora_fin}`).add(1, 'minutes').tz('Europe/Madrid');
 
-        console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
-        console.log(`Hora de fin permitida: ${horaFinPermitida.format('HH:mm:ss')}`);
-
         if (ahora.isSameOrBefore(horaFinPermitida)) {
             const horaSalida = ahora.format('HH:mm:ss');
-            console.log(`Marcando salida con hora: ${horaSalida} para el registro: ${id_registro}`);
-            const result = await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2 RETURNING id_registro', [horaSalida, id_registro]);
-            console.log('Salida marcada con éxito para el registro', id_registro);
-            res.send({ message: 'Salida marcada con éxito', id_registro: result.rows[0].id_registro });
+            await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
+            res.send({ message: 'Salida marcada con éxito' });
         } else {
-            console.log('No se permite marcar salida después de las', horaFinPermitida.format('HH:mm:ss'));
-            res.status(403).send({ message: 'No se permite marcar salida después de las ' + horaFinPermitida.format('HH:mm:ss') });
+            res.status(403).send({ message: 'No se permite marcar salida después de las ' + horaFinPermitida.format('HH:mm') });
         }
     } catch (err) {
         console.error("Error en la consulta del registro:", err.message);
         res.status(500).send({ error: err.message });
     }
 });
+
+
 
 
 
