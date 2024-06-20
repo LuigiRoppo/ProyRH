@@ -8,7 +8,7 @@ function AddEmployeeForm() {
     const [employeeName, setEmployeeName] = useState('');
     const [step, setStep] = useState(1); 
     const [idRegistro, setIdRegistro] = useState(null);
-//ho//
+
     const handleIdentify = async () => {
         try {
             const empleado = await getEmpleadoById(employeeId);
@@ -27,7 +27,7 @@ function AddEmployeeForm() {
     const handleEntrada = async () => {
         const now = moment().tz('Europe/Madrid'); 
         const fecha = now.format('YYYY-MM-DD');
-        const diasSemana = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+        const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
         const diaSemana = diasSemana[now.day()]; 
         
         try {
@@ -46,7 +46,7 @@ function AddEmployeeForm() {
                 console.log('Hora de inicio permitida:', horaInicioPermitida.format('HH:mm')); 
                 console.log('Hora actual:', now.format('HH:mm'));
 
-                if (now.isSameOrAfter(horaInicioPermitida)) {
+                if (now.isSameOrAfter(horaInicioPermitida) && now.isBefore(moment(`${fecha}T${horario.hora_fin}`).tz('Europe/Madrid'))) {
                     const entradaRespuesta = await marcarEntrada({
                         id_empleado: employeeId,
                         fecha
@@ -55,7 +55,7 @@ function AddEmployeeForm() {
                     alert('Hora de entrada registrada con éxito');
                     resetForm();
                 } else {
-                    alert(`No se permite marcar entrada antes de las ${horaInicioPermitida.format('HH:mm')}`);
+                    alert(`No se permite marcar entrada antes de las ${horaInicioPermitida.format('HH:mm')} o después de las ${horario.hora_fin}`);
                 }
             } else {
                 alert('No se encontró el horario para este empleado o la hora de inicio no está definida.');

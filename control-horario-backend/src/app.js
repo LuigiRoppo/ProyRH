@@ -86,7 +86,6 @@ app.get('/empleados/:id', async (req, res) => {
     }
 });
 
-
 // Verificar y actualizar registros pendientes
 const verificarYActualizarRegistrosPendientes = async () => {
     try {
