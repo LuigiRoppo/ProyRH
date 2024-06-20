@@ -353,17 +353,19 @@ app.delete('/horarios/:id', async (req, res) => {
     }
 });
 
-app.delete('/empleados/:id', (req, res) => {
+app.delete('/empleados/:id', async (req, res) => {
     const id = req.params.id;
-    const sql = 'DELETE FROM empleados WHERE id = ?';
+    const sql = 'DELETE FROM empleados WHERE id = $1';
     
-    db.run(sql, [id], function (err) {
-        if (err) {
-            return res.status(500).json({ error: err.message });
-        }
-        res.json({ message: `Empleado con ID ${id} eliminado`, changes: this.changes });
-    });
+    try {
+        const result = await client.query(sql, [id]);
+        res.json({ message: `Empleado con ID ${id} eliminado` });
+    } catch (err) {
+        console.error('Error al eliminar empleado:', err.message);
+        res.status(500).json({ error: err.message });
+    }
 });
+
 
 async function generateUniqueId() {
     let id;
