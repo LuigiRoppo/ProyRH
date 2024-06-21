@@ -1,6 +1,9 @@
 # Usa una imagen base oficial de Node.js
 FROM node:18
 
+# Instala dependencias adicionales necesarias
+RUN apt-get update && apt-get install -y curl git
+
 # Establece el directorio de trabajo para el backend
 WORKDIR /app
 
