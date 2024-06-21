@@ -216,6 +216,7 @@ app.get('/overtime/:id', async (req, res) => {
 
 app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha } = req.body;
+    console.log(`Datos recibidos para marcar entrada: ${JSON.stringify(req.body)}`);
     const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
     const diaSemana = new Date(fecha).getDay();
     const diaNombre = diaIndices[diaSemana];
@@ -224,10 +225,9 @@ app.post('/marcar-entrada', async (req, res) => {
 
     try {
         const horarios = await client.query('SELECT hora_inicio, hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
+        console.log('Horarios obtenidos de la DB:', horarios.rows);
 
         if (horarios.rows.length > 0) {
-            console.log('Horarios obtenidos de la DB:', horarios.rows);
-
             const horario = horarios.rows.reduce((earliest, current) => {
                 return moment(current.hora_inicio, 'HH:mm').isBefore(moment(earliest.hora_inicio, 'HH:mm')) ? current : earliest;
             });
@@ -257,6 +257,7 @@ app.post('/marcar-entrada', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 
 app.post('/marcar-salida', async (req, res) => {
     const { id_empleado } = req.body;  // Cambiado a id_empleado para recibir el ID del empleado
