@@ -84,7 +84,7 @@ function HorarioForm() {
             >
                 <option value="">Seleccione un Empleado</option>
                 {empleadosFiltrados.map(empleado => (
-                    <option key={empleado.id} value={empleado.id}>{empleado.nombre}</option>
+                    <option key={empleado.id_empleado} value={empleado.id_empleado}>{empleado.nombre}</option>
                 ))}
             </select>
             {horarios.map((horario, index) => (

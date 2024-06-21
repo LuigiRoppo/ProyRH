@@ -14,12 +14,12 @@ export const getEmpleados = async () => {
     }
 };
 
-export const getEmpleadoById = async (id) => {
+export const getEmpleadoById = async (id_empleado) => {
     try {
-        const response = await axios.get(`${BASE_URL}/empleados/${id}`);
+        const response = await axios.get(`${BASE_URL}/empleados/${id_empleado}`);
         return response.data;
     } catch (error) {
-        console.error(`Error al obtener empleado con ID ${id}:`, error);
+        console.error(`Error al obtener empleado con ID ${id_empleado}:`, error);
         throw error;
     }
 };
@@ -34,12 +34,12 @@ export const createEmpleado = async (empleado) => {
     }
 };
 
-export const deleteEmpleado = async (id) => {
+export const deleteEmpleado = async (id_empleado) => {
     try {
-        const response = await axios.delete(`${BASE_URL}/empleados/${id}`);
+        const response = await axios.delete(`${BASE_URL}/empleados/${id_empleado}`);
         return response.data;
     } catch (error) {
-        console.error(`Error al eliminar empleado con ID ${id}:`, error);
+        console.error(`Error al eliminar empleado con ID ${id_empleado}:`, error);
         throw error;
     }
 };
@@ -55,12 +55,12 @@ export const getHorarios = async () => {
     }
 };
 
-export const getHorarioByEmpleadoId = async (id) => {
+export const getHorarioByEmpleadoId = async (id_empleado) => {
     try {
-        const response = await axios.get(`${BASE_URL}/horario/${id}`);
+        const response = await axios.get(`${BASE_URL}/horario/${id_empleado}`);
         return response.data;
     } catch (error) {
-        console.error(`Error al obtener horario para empleado con ID ${id}:`, error);
+        console.error(`Error al obtener horario para empleado con ID ${id_empleado}:`, error);
         throw error;
     }
 };
