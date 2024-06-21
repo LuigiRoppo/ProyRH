@@ -399,7 +399,7 @@ app.delete('/empleados/:id_empleado', async (req, res) => {
     const sql = 'DELETE FROM empleados WHERE id_empleado = $1';
     
     try {
-        const result = await client.query(sql, [id]);
+        const result = await client.query(sql, [id_empleado]);
         res.json({ message: `Empleado con id_empleado ${id_empleado} eliminado` });
     } catch (err) {
         console.error('Error al eliminar empleado:', err.message);

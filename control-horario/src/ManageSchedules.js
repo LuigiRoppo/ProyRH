@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getEmpleados, getHorarios, deleteHorario, updateHorario } from './apiService'; // Importamos las funciones necesarias
-import './ManageSchedules.css'; // Asegúrate de importar tu archivo CSS
+import './ManageSchedules.css'; 
 
 function ManageSchedules() {
     const [empleados, setEmpleados] = useState([]);
@@ -27,10 +27,10 @@ function ManageSchedules() {
         fetchData();
     }, []);
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (id_empleado) => {
         try {
-            await deleteHorario(id);
-            setHorarios(horarios.filter(horario => horario.id_horario !== id));
+            await deleteHorario(id_empleado);
+            setHorarios(horarios.filter(horario => horario.id_horario !== id_empleado));
             alert('Horario eliminado con éxito');
         } catch (error) {
             console.error('Error al eliminar horario:', error);
@@ -82,7 +82,7 @@ function ManageSchedules() {
             >
                 <option value="">Seleccione un Empleado</option>
                 {empleados.filter(emp => emp.ubicacion === selectedUbicacion).map(empleado => (
-                    <option key={empleado.id} value={empleado.id}>{empleado.nombre}</option>
+                    <option key={empleado.id_empleado} value={empleado.id_empleado}>{empleado.nombre}</option>
                 ))}
             </select>
             {selectedEmpleadoId && horarios.filter(horario => horario.id_empleado.toString() === selectedEmpleadoId).map(horario => (
