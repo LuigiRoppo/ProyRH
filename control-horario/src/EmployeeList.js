@@ -38,7 +38,7 @@ function EmployeeList() {
             <table className="employee-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>id_empleado</th>
                         <th>Nombre</th>
                         <th>Ubicación</th>
                         <th>Acciones</th>
@@ -46,12 +46,12 @@ function EmployeeList() {
                 </thead>
                 <tbody>
                     {empleados.map(empleado => (
-                        <tr key={empleado.id}>
-                            <td>{empleado.id}</td>
+                        <tr key={empleado.id_empleado}>
+                            <td>{empleado.id_empleado}</td>
                             <td>{empleado.nombre}</td>
                             <td>{empleado.ubicacion}</td>
                             <td>
-                                <button onClick={() => handleDelete(empleado.id)} className="delete-button">Eliminar</button>
+                                <button onClick={() => handleDelete(empleado.id_empleado)} className="delete-button">Eliminar</button>
                             </td>
                         </tr>
                     ))}

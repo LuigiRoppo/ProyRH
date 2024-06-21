@@ -171,7 +171,7 @@ app.get('/obtener-horario', async (req, res) => {
 });
 
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
-    const id_empleado = req.params.id_empleado;
+    const idEmpleado = req.params.id_empleado;
     const sql = `
         SELECT * FROM registros_horarios
         WHERE id_empleado = $1
@@ -181,7 +181,7 @@ app.get('/ultimo-registro/:id_empleado', async (req, res) => {
     `;
 
     try {
-        const result = await client.query(sql, [id_empleado]);
+        const result = await client.query(sql, [idEmpleado]);
         res.json(result.rows[0]);
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -203,7 +203,7 @@ app.get('/registros/:id_empleado', async (req, res) => {
 app.get('/overtime/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
     try {
-        const result = await client.query('SELECT * FROM horas_extras WHERE id_empleado = $1', [id_empleado]);
+        const result = await client.query('SELECT * FROM horas_extras WHERE id_empleado = $1', [id]);
         res.send(result.rows);
     } catch (err) {
         res.status(500).send({ error: err.message });
@@ -315,12 +315,12 @@ app.post('/marcar-salida', async (req, res) => {
 
 
 app.post('/horarios', async (req, res) => {
-    const { id_empleado, horarios } = req.body;
+    const { idEmpleado, horarios } = req.body;
     const sql = 'INSERT INTO horarios (id_empleado, dia_semana, hora_inicio, hora_fin) VALUES ($1, $2, $3, $4)';
 
     try {
         for (const horario of horarios) {
-            await client.query(sql, [id_empleado, horario.dia, horario.inicio, horario.fin]);
+            await client.query(sql, [idEmpleado, horario.dia, horario.inicio, horario.fin]);
         }
         res.json({ message: 'Horarios creados con éxito' });
     } catch (err) {
@@ -364,7 +364,7 @@ app.post('/registros-horarios', async (req, res) => {
 });
 
 
-app.put('/horarios/:id', async (req, res) => {
+app.put('/horarios/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
     const { dia_semana, hora_inicio, hora_fin } = req.body;
 
