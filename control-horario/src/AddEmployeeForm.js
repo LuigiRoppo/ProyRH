@@ -8,7 +8,7 @@ function AddEmployeeForm() {
     const [employeeName, setEmployeeName] = useState('');
     const [step, setStep] = useState(1); 
     const [idRegistro, setIdRegistro] = useState(null);
-//ho//
+
     const handleIdentify = async () => {
         try {
             const empleado = await getEmpleadoById(employeeId);
@@ -35,23 +35,23 @@ function AddEmployeeForm() {
             console.log('Horario:', horarioArray);
             const horariosDelDia = horarioArray.filter(h => h.dia_semana === diaSemana);
             console.log('Horarios del día:', horariosDelDia);
-    
+
             if (horariosDelDia.length > 0) {
                 const horario = horariosDelDia.reduce((earliest, current) => {
                     return moment(current.hora_inicio, 'HH:mm').isBefore(moment(earliest.hora_inicio, 'HH:mm')) ? current : earliest;
                 });
                 console.log('Horario seleccionado:', horario);
-    
+
                 const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(30, 'minutes').tz('Europe/Madrid');
                 console.log('Hora de inicio permitida:', horaInicioPermitida.format('HH:mm')); 
                 console.log('Hora actual:', now.format('HH:mm'));
-    
+
                 if (now.isSameOrAfter(horaInicioPermitida) && now.isBefore(moment(`${fecha}T${horario.hora_fin}`).tz('Europe/Madrid'))) {
                     const entradaRespuesta = await marcarEntrada({
                         id_empleado: employeeId,
                         fecha
                     });
-                    setIdRegistro(entradaRespuesta.id); 
+                    setIdRegistro(entradaRespuesta.id_registro); 
                     alert('Hora de entrada registrada con éxito');
                     resetForm();
                 } else {
@@ -65,14 +65,13 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación, Debes marcar dentro del Horario Establecido! ;)');
         }
     };
-    
-    
+
     const handleSalida = async () => {
         if (!employeeId) {
             alert("Primero debe ingresar su ID de empleado.");
             return;
         }
-    
+
         try {
             console.log('Consultando último registro para empleado ID:', employeeId);
             const ultimoRegistro = await getUltimoRegistroByEmpleadoId(employeeId);
@@ -92,7 +91,7 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación de salida');
         }
     };
-    
+
     const resetForm = () => {
         setEmployeeId('');
         setEmployeeName('');

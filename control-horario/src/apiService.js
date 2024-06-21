@@ -1,129 +1,143 @@
-import React, { useState } from 'react';
-import moment from 'moment-timezone';
-import './AddEmployeeForm.css';
-import { getEmpleadoById, getUltimoRegistroByEmpleadoId, marcarEntrada, marcarSalida, getHorarioByEmpleadoId } from './apiService';
+import axios from 'axios';
 
-function AddEmployeeForm() {
-    const [employeeId, setEmployeeId] = useState('');
-    const [employeeName, setEmployeeName] = useState('');
-    const [step, setStep] = useState(1); 
-    const [idRegistro, setIdRegistro] = useState(null);
+// URL base del backend
+const BASE_URL = process.env.REACT_APP_API_URL || 'https://proyrh-production.up.railway.app';
 
-    const handleIdentify = async () => {
-        try {
-            const empleado = await getEmpleadoById(employeeId);
-            if (empleado) {
-                setEmployeeName(empleado.nombre);  
-                setStep(2); 
-            } else {
-                alert('ID de empleado no encontrado.');
-            }
-        } catch (error) {
-            console.error('Error al buscar el empleado:', error);
-            alert('Error al buscar el empleado');
-        }
-    };
+// Funciones de Empleados
+export const getEmpleados = async () => {
+    try {
+        const response = await axios.get(`${BASE_URL}/empleados`);
+        return response.data;
+    } catch (error) {
+        console.error('Error al obtener empleados:', error);
+        throw error;
+    }
+};
 
-    const handleEntrada = async () => {
-        const now = moment().tz('Europe/Madrid'); 
-        const fecha = now.format('YYYY-MM-DD');
-        const diasSemana = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
-        const diaSemana = diasSemana[now.day()]; 
-        
-        try {
-            const horarioArray = await getHorarioByEmpleadoId(employeeId);
-            console.log('Horario:', horarioArray);
-            const horariosDelDia = horarioArray.filter(h => h.dia_semana === diaSemana);
-            console.log('Horarios del día:', horariosDelDia);
+export const getEmpleadoById = async (id) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/empleados/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error al obtener empleado con ID ${id}:`, error);
+        throw error;
+    }
+};
 
-            if (horariosDelDia.length > 0) {
-                const horario = horariosDelDia.reduce((earliest, current) => {
-                    return moment(current.hora_inicio, 'HH:mm').isBefore(moment(earliest.hora_inicio, 'HH:mm')) ? current : earliest;
-                });
-                console.log('Horario seleccionado:', horario);
+export const createEmpleado = async (empleado) => {
+    try {
+        const response = await axios.post(`${BASE_URL}/empleados`, empleado);
+        return response.data;
+    } catch (error) {
+        console.error('Error al crear empleado:', error);
+        throw error;
+    }
+};
 
-                const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(30, 'minutes').tz('Europe/Madrid');
-                console.log('Hora de inicio permitida:', horaInicioPermitida.format('HH:mm')); 
-                console.log('Hora actual:', now.format('HH:mm'));
+export const deleteEmpleado = async (id) => {
+    try {
+        const response = await axios.delete(`${BASE_URL}/empleados/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error al eliminar empleado con ID ${id}:`, error);
+        throw error;
+    }
+};
 
-                if (now.isSameOrAfter(horaInicioPermitida) && now.isBefore(moment(`${fecha}T${horario.hora_fin}`).tz('Europe/Madrid'))) {
-                    const entradaRespuesta = await marcarEntrada({
-                        id_empleado: employeeId,
-                        fecha
-                    });
-                    setIdRegistro(entradaRespuesta.id_registro); 
-                    alert('Hora de entrada registrada con éxito');
-                    resetForm();
-                } else {
-                    alert(`No se permite marcar entrada antes de las ${horaInicioPermitida.format('HH:mm')} o después de las ${horario.hora_fin}`);
-                }
-            } else {
-                alert('No se encontró el horario para este empleado o la hora de inicio no está definida.');
-            }
-        } catch (error) {
-            console.error('Error al verificar horario o marcar entrada:', error);
-            alert('Error al realizar la operación, Debes marcar dentro del Horario Establecido! ;)');
-        }
-    };
+// Funciones de Horarios
+export const getHorarios = async () => {
+    try {
+        const response = await axios.get(`${BASE_URL}/horarios`);
+        return response.data;
+    } catch (error) {
+        console.error('Error al obtener horarios:', error);
+        throw error;
+    }
+};
 
-    const handleSalida = async () => {
-        if (!employeeId) {
-            alert("Primero debe ingresar su ID de empleado.");
-            return;
-        }
+export const getHorarioByEmpleadoId = async (id) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/horario/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error al obtener horario para empleado con ID ${id}:`, error);
+        throw error;
+    }
+};
 
-        try {
-            console.log('Consultando último registro para empleado ID:', employeeId);
-            const ultimoRegistro = await getUltimoRegistroByEmpleadoId(employeeId);
-            console.log('Último registro obtenido:', ultimoRegistro);
-            if (ultimoRegistro && !ultimoRegistro.hora_salida) {
-                const salidaRespuesta = await marcarSalida({
-                    id_registro: ultimoRegistro.id_registro
-                });
-                console.log('Respuesta de marcar salida:', salidaRespuesta);
-                alert('Hora de salida registrada: ' + salidaRespuesta.message);
-                resetForm();
-            } else {
-                alert('No se encontró un registro de entrada sin hora de salida para este empleado.');
-            }
-        } catch (error) {
-            console.error('Error al marcar salida:', error);
-            alert('Error al realizar la operación de salida');
-        }
-    };
+export const createHorarios = async (idEmpleado, horarios) => {
+    try {
+        const response = await axios.post(`${BASE_URL}/horarios`, { idEmpleado, horarios });
+        return response.data;
+    } catch (error) {
+        console.error('Error al crear horarios:', error);
+        throw error;
+    }
+};
 
-    const resetForm = () => {
-        setEmployeeId('');
-        setEmployeeName('');
-        setStep(1);
-        setIdRegistro(null);
-    };
+export const updateHorario = async (id, horario) => {
+    try {
+        const response = await axios.put(`${BASE_URL}/horarios/${id}`, horario);
+        return response.data;
+    } catch (error) {
+        console.error(`Error al actualizar horario con ID ${id}:`, error);
+        throw error;
+    }
+};
 
-    return (
-        <div className="form-container">
-            {step === 1 ? (
-                <div className="form-step">
-                    <h1 className="form-title">Control Horario</h1>
-                    <input
-                        type="text"
-                        value={employeeId}
-                        onChange={(e) => setEmployeeId(e.target.value)}
-                        placeholder="Ingrese su ID de empleado"
-                        className="form-element"
-                    />
-                    <button onClick={handleIdentify} className="button">Continuar</button>
-                </div>
-            ) : (
-                <div className="form-step">
-                    <h2>Hola, {employeeName}</h2>
-                    <div className="action-buttons">
-                        <button onClick={handleEntrada} className="button">Marcar Entrada</button>
-                        <button onClick={handleSalida} className="button">Marcar Salida</button>
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-}
+export const deleteHorario = async (id) => {
+    try {
+        const response = await axios.delete(`${BASE_URL}/horarios/${id}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error al eliminar horario con ID ${id}:`, error);
+        throw error;
+    }
+};
 
-export default AddEmployeeForm;
+// Funciones de Registros
+export const getUltimoRegistroByEmpleadoId = async (idEmpleado) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/ultimo-registro/${idEmpleado}`);
+        return response.data;
+    } catch (error) {
+        console.error(`Error al obtener el último registro del empleado con ID ${idEmpleado}:`, error);
+        throw error;
+    }
+};
+
+export const getRegistrosByEmpleadoId = async (id, start, end) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/registros/${id}`, {
+            params: { start, end },
+        });
+        return response.data;
+    } catch (error) {
+        console.error(`Error al obtener registros para el empleado con ID ${id}:`, error);
+        throw error;
+    }
+};
+
+export const marcarEntrada = async (registro) => {
+    try {
+        console.log('Enviando datos a marcarEntrada:', registro);
+        const response = await axios.post(`${BASE_URL}/marcar-entrada`, registro);
+        console.log('Respuesta recibida de marcarEntrada:', response);
+        return response.data;
+    } catch (error) {
+        console.error('Error al marcar entrada:', error.response ? error.response.data : error.message);
+        throw error;
+    }
+};
+export const marcarSalida = async (registro) => {
+    console.log('Enviando datos a marcarSalida:', registro);
+    try {
+        const response = await axios.post(`${BASE_URL}/marcar-salida`, registro);
+        console.log('Respuesta del servidor:', response.data);
+        return response.data;
+    } catch (error) {
+        console.error('Error al marcar salida:', error);
+        throw error;
+    }
+};
+
