@@ -87,10 +87,11 @@ app.get('/empleados/:id', async (req, res) => {
 });
 
 // Verificar y actualizar registros pendientes
+// Verificar y actualizar registros pendientes
 const verificarYActualizarRegistrosPendientes = async () => {
     try {
         const registros = await client.query('SELECT id_registro, id_empleado, fecha, hora_entrada FROM registros_horarios WHERE hora_salida IS NULL');
-        registros.rows.forEach(async registro => {
+        for (const registro of registros.rows) {
             const { id_registro, id_empleado, fecha, hora_entrada } = registro;
             const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
             const diaSemana = new Date(fecha).getDay();
@@ -116,11 +117,15 @@ const verificarYActualizarRegistrosPendientes = async () => {
                     console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
                 }
             }
-        });
+        }
     } catch (err) {
         console.error("Error en la consulta de registros pendientes:", err.message);
     }
 };
+
+// Ejecutar la función cada minuto para pruebas
+setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
+
 
 // Ejecutar la función cada minuto para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
@@ -253,30 +258,36 @@ app.post('/marcar-entrada', async (req, res) => {
     }
 });
 
-
 app.post('/marcar-salida', async (req, res) => {
-    const { id_registro } = req.body;
+    const { id_empleado } = req.body;  // Cambiado a id_empleado para recibir el ID del empleado
 
-    console.log(`Intentando marcar salida para el registro con ID: ${id_registro}`);
+    console.log(`Intentando marcar salida para el empleado con ID: ${id_empleado}`);
 
     try {
-        const registro = await client.query('SELECT id_empleado, fecha FROM registros_horarios WHERE id_registro = $1', [id_registro]);
+        const registro = await client.query(`
+            SELECT id_registro, fecha, hora_entrada 
+            FROM registros_horarios 
+            WHERE id_empleado = $1 AND hora_salida IS NULL 
+            ORDER BY id_registro DESC 
+            LIMIT 1
+        `, [id_empleado]);
 
         if (registro.rows.length === 0) {
-            console.log("No se encontró el registro con ID:", id_registro);
-            return res.status(404).send({ message: 'Registro no encontrado' });
+            console.log("No se encontró un registro de entrada sin salida para el empleado:", id_empleado);
+            return res.status(404).send({ message: 'No se encontró un registro de entrada sin salida para el empleado' });
         }
 
         console.log(`Registro encontrado: ${JSON.stringify(registro.rows[0])}`);
 
+        const { id_registro, fecha } = registro.rows[0];
         const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
-        const diaSemana = new Date(registro.rows[0].fecha).getDay();
+        const diaSemana = new Date(fecha).getDay();
         const diaNombre = diaIndices[diaSemana];
 
-        const horario = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [registro.rows[0].id_empleado, diaNombre]);
+        const horario = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
 
         if (horario.rows.length === 0) {
-            console.log("No se encontró horario para el empleado", registro.rows[0].id_empleado, "el día", diaNombre);
+            console.log("No se encontró horario para el empleado", id_empleado, "el día", diaNombre);
             return res.status(404).send({ message: 'Horario no encontrado para el empleado' });
         }
 
@@ -284,8 +295,8 @@ app.post('/marcar-salida', async (req, res) => {
 
         const ahora = moment().tz('Europe/Madrid');
         const horaFinPermitida = horario.rows[0].hora_fin === "00:00"
-            ? moment(`${registro.rows[0].fecha}T23:59:59`).add(1, 'minutes').tz('Europe/Madrid')
-            : moment(`${registro.rows[0].fecha}T${horario.rows[0].hora_fin}`).add(1, 'minutes').tz('Europe/Madrid');
+            ? moment(`${fecha}T23:59:59`).add(1, 'minutes').tz('Europe/Madrid')
+            : moment(`${fecha}T${horario.rows[0].hora_fin}`).add(1, 'minutes').tz('Europe/Madrid');
 
         console.log(`Hora fin permitida: ${horaFinPermitida.format('HH:mm:ss')}`);
         console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
@@ -304,16 +315,6 @@ app.post('/marcar-salida', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
-
-
-
-
-
-
-
-
-
 
 
 app.post('/horarios', async (req, res) => {
