@@ -29,8 +29,8 @@ const Overtime = ({ employeeId }) => {
       <table>
         <thead>
           <tr>
-            <th>Fecha</th>
-            <th>Horas Extras</th>
+            {/* <th>Fecha</th>
+            <th>Horas Extras</th> */}
           </tr>
         </thead>
         <tbody>
