@@ -71,10 +71,10 @@ app.get('/empleados', async (req, res) => {
     }
 });
 
-app.get('/empleados/:id', async (req, res) => {
-    const { id } = req.params;
+app.get('/empleados/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
     try {
-        const result = await client.query('SELECT * FROM empleados WHERE id = $1', [id]);
+        const result = await client.query('SELECT * FROM empleados WHERE id_empleado = $1', [id_empleado]);
         if (result.rows.length > 0) {
             res.json(result.rows[0]);
         } else {
@@ -126,10 +126,6 @@ const verificarYActualizarRegistrosPendientes = async () => {
 // Ejecutar la función cada minuto para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
 
-
-// Ejecutar la función cada minuto para pruebas
-setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
-
 // Otras rutas y lógica de la aplicación...
 app.get('/horarios', async (req, res) => {
     try {
@@ -140,10 +136,10 @@ app.get('/horarios', async (req, res) => {
     }
 });
 
-app.get('/horario/:id', async (req, res) => {
-    const { id } = req.params;
+app.get('/horario/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
     try {
-        const result = await client.query('SELECT * FROM horarios WHERE id_empleado = $1', [id]);
+        const result = await client.query('SELECT * FROM horarios WHERE id_empleado = $1', [id_empleado]);
         res.send(result.rows);
     } catch (err) {
         res.status(500).send({ error: err.message });
@@ -175,7 +171,7 @@ app.get('/obtener-horario', async (req, res) => {
 });
 
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
-    const idEmpleado = req.params.id_empleado;
+    const id_empleado = req.params.id_empleado;
     const sql = `
         SELECT * FROM registros_horarios
         WHERE id_empleado = $1
@@ -185,29 +181,29 @@ app.get('/ultimo-registro/:id_empleado', async (req, res) => {
     `;
 
     try {
-        const result = await client.query(sql, [idEmpleado]);
+        const result = await client.query(sql, [id_empleado]);
         res.json(result.rows[0]);
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
 });
 
-app.get('/registros/:id', async (req, res) => {
-    const { id } = req.params;
+app.get('/registros/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
     const { start, end } = req.query;
 
     try {
-        const result = await client.query('SELECT * FROM registros_horarios WHERE id_empleado = $1 AND fecha BETWEEN $2 AND $3', [id, start, end]);
+        const result = await client.query('SELECT * FROM registros_horarios WHERE id_empleado = $1 AND fecha BETWEEN $2 AND $3', [id_empleado, start, end]);
         res.send(result.rows);
     } catch (err) {
         res.status(500).send({ error: err.message });
     }
 });
 
-app.get('/overtime/:id', async (req, res) => {
-    const { id } = req.params;
+app.get('/overtime/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
     try {
-        const result = await client.query('SELECT * FROM horas_extras WHERE id_empleado = $1', [id]);
+        const result = await client.query('SELECT * FROM horas_extras WHERE id_empleado = $1', [id_empleado]);
         res.send(result.rows);
     } catch (err) {
         res.status(500).send({ error: err.message });
@@ -260,7 +256,7 @@ app.post('/marcar-entrada', async (req, res) => {
 
 
 app.post('/marcar-salida', async (req, res) => {
-    const { id_empleado } = req.body;  // Cambiado a id_empleado para recibir el ID del empleado
+    const { id_empleado } = req.body;  // Cambiado a id_empleado para recibir el id_empleado del empleado
 
     console.log(`Intentando marcar salida para el empleado con ID: ${id_empleado}`);
 
@@ -319,12 +315,12 @@ app.post('/marcar-salida', async (req, res) => {
 
 
 app.post('/horarios', async (req, res) => {
-    const { idEmpleado, horarios } = req.body;
+    const { id_empleado, horarios } = req.body;
     const sql = 'INSERT INTO horarios (id_empleado, dia_semana, hora_inicio, hora_fin) VALUES ($1, $2, $3, $4)';
 
     try {
         for (const horario of horarios) {
-            await client.query(sql, [idEmpleado, horario.dia, horario.inicio, horario.fin]);
+            await client.query(sql, [id_empleado, horario.dia, horario.inicio, horario.fin]);
         }
         res.json({ message: 'Horarios creados con éxito' });
     } catch (err) {
@@ -336,9 +332,9 @@ app.post('/empleados', async (req, res) => {
     const { nombre, ubicacion } = req.body;
 
     try {
-        const id = await generateUniqueId();
-        const result = await client.query('INSERT INTO empleados (id, nombre, ubicacion) VALUES ($1, $2, $3) RETURNING id', [id, nombre, ubicacion]);
-        res.send({ message: 'Empleado creado con éxito', id: result.rows[0].id });
+        const id_empleado = await generateUniqueId();
+        const result = await client.query('INSERT INTO empleados (id_empleado, nombre, ubicacion) VALUES ($1, $2, $3) RETURNING id_empleado', [id_empleado, nombre, ubicacion]);
+        res.send({ message: 'Empleado creado con éxito', id_empleado: result.rows[0].id_empleado });
     } catch (err) {
         res.status(500).send({ error: err.message });
     }
@@ -358,8 +354,8 @@ app.post('/registros-horarios', async (req, res) => {
         console.log('Realizando inserción en registros_horarios con la consulta:', sql);
         const result = await client.query(sql, [id_empleado, fecha, hora_entrada, hora_salida]);
         // Log después de una inserción exitosa
-        console.log('Inserción exitosa, id del registro creado:', result.rows[0].id);
-        res.send({ message: 'Registro horario creado con éxito', id: result.rows[0].id });
+        console.log('Inserción exitosa, id_empleado del registro creado:', result.rows[0].id_empleado);
+        res.send({ message: 'Registro horario creado con éxito', id: result.rows[0].id_empleado });
     } catch (err) {
         // Log en caso de error
         console.error('Error al insertar en registros_horarios:', err.message);
@@ -369,10 +365,10 @@ app.post('/registros-horarios', async (req, res) => {
 
 
 app.put('/horarios/:id', async (req, res) => {
-    const { id } = req.params;
+    const { id_empleado } = req.params;
     const { dia_semana, hora_inicio, hora_fin } = req.body;
 
-    console.log(`Actualizando horario con ID: ${id}, Día: ${dia_semana}, Inicio: ${hora_inicio}, Fin: ${hora_fin}`);
+    console.log(`Actualizando horario con ID: ${id_empleado}, Día: ${dia_semana}, Inicio: ${hora_inicio}, Fin: ${hora_fin}`);
 
     const sql = `UPDATE horarios SET dia_semana = $1, hora_inicio = $2, hora_fin = $3 WHERE id_horario = $4`;
 
@@ -386,25 +382,25 @@ app.put('/horarios/:id', async (req, res) => {
     }
 });
 
-app.delete('/horarios/:id', async (req, res) => {
-    const { id } = req.params;
+app.delete('/horarios/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
     const sql = 'DELETE FROM horarios WHERE id_horario = $1';
 
     try {
-        await client.query(sql, [id]);
+        await client.query(sql, [id_empleado]);
         res.send({ message: 'Horario eliminado con éxito' });
     } catch (err) {
         res.status(500).send({ error: err.message });
     }
 });
 
-app.delete('/empleados/:id', async (req, res) => {
-    const id = req.params.id;
-    const sql = 'DELETE FROM empleados WHERE id = $1';
+app.delete('/empleados/:id_empleado', async (req, res) => {
+    const id_empleado = req.params.id;
+    const sql = 'DELETE FROM empleados WHERE id_empleado = $1';
     
     try {
         const result = await client.query(sql, [id]);
-        res.json({ message: `Empleado con ID ${id} eliminado` });
+        res.json({ message: `Empleado con id_empleado ${id_empleado} eliminado` });
     } catch (err) {
         console.error('Error al eliminar empleado:', err.message);
         res.status(500).json({ error: err.message });
@@ -413,12 +409,13 @@ app.delete('/empleados/:id', async (req, res) => {
 
 
 async function generateUniqueId() {
-    let id;
+    let id_empleado;
     let isUnique = false;
     while (!isUnique) {
-        id = Math.floor(1000 + Math.random() * 9000);
-        const result = await client.query('SELECT id FROM empleados WHERE id = $1', [id]);
+        id_empleado = Math.floor(1000 + Math.random() * 9000);
+        const result = await client.query('SELECT id_empleado FROM empleados WHERE id_empleado = $1', [id_empleado]);
         if (result.rows.length === 0) isUnique = true;
     }
-    return id;
+    return id_empleado;
 }
+
