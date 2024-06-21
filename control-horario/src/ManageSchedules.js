@@ -89,7 +89,7 @@ function ManageSchedules() {
                 <div key={horario.id_horario} className="schedule-item">
                     <div>{horario.dia_semana} {horario.hora_inicio} - {horario.hora_fin}</div>
                     <div className="schedule-actions">
-                        <button onClick={() => handleUpdate(horario)}>Editar</button>
+                        <button onClick={() => handleUpdate(horario.id_horario)}>Editar</button>
                         <button onClick={() => handleDelete(horario.id_horario)}>Eliminar</button>
                     </div>
                 </div>
