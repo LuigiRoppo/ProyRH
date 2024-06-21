@@ -27,10 +27,10 @@ function ManageSchedules() {
         fetchData();
     }, []);
 
-    const handleDelete = async (id_empleado) => {
+    const handleDelete = async (id_horario) => {
         try {
-            await deleteHorario(id_empleado);
-            setHorarios(horarios.filter(horario => horario.id_horario !== id_empleado));
+            await deleteHorario(id_horario);
+            setHorarios(horarios.filter(horario => horario.id_horario !== id_horario));
             alert('Horario eliminado con éxito');
         } catch (error) {
             console.error('Error al eliminar horario:', error);

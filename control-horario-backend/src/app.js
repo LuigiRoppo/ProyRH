@@ -364,16 +364,16 @@ app.post('/registros-horarios', async (req, res) => {
 });
 
 
-app.put('/horarios/:id_empleado', async (req, res) => {
-    const { id_empleado } = req.params;
+app.put('/horarios/:id_horario', async (req, res) => {
+    const { id_horario } = req.params;
     const { dia_semana, hora_inicio, hora_fin } = req.body;
 
-    console.log(`Actualizando horario con ID: ${id_empleado}, Día: ${dia_semana}, Inicio: ${hora_inicio}, Fin: ${hora_fin}`);
+    console.log(`Actualizando horario con ID: ${id_horario}, Día: ${dia_semana}, Inicio: ${hora_inicio}, Fin: ${hora_fin}`);
 
     const sql = `UPDATE horarios SET dia_semana = $1, hora_inicio = $2, hora_fin = $3 WHERE id_horario = $4`;
 
     try {
-        await client.query(sql, [dia_semana, hora_inicio, hora_fin, id]);
+        await client.query(sql, [dia_semana, hora_inicio, hora_fin, id_horario]);
         console.log('Horario actualizado con éxito');
         res.send({ message: 'Horario actualizado con éxito' });
     } catch (err) {
@@ -381,6 +381,7 @@ app.put('/horarios/:id_empleado', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 
 app.delete('/horarios/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
