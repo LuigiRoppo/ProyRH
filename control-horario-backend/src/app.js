@@ -395,7 +395,7 @@ app.delete('/horarios/:id_empleado', async (req, res) => {
 });
 
 app.delete('/empleados/:id_empleado', async (req, res) => {
-    const id_empleado = req.params.id;
+    const id_empleado = req.params.id_empleado;
     const sql = 'DELETE FROM empleados WHERE id_empleado = $1';
     
     try {

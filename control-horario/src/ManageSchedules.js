@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getEmpleados, getHorarios, deleteHorario, updateHorario } from './apiService'; // Importamos las funciones necesarias
+import { getEmpleados, getHorarios, deleteHorario, updateHorario } from './apiService'; 
 import './ManageSchedules.css'; 
 
 function ManageSchedules() {

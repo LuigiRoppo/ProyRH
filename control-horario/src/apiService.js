@@ -75,22 +75,22 @@ export const createHorarios = async (idEmpleado, horarios) => {
     }
 };
 
-export const updateHorario = async (id_empleado, horario) => {
+export const updateHorario = async (id_horario, horario) => {
     try {
-        const response = await axios.put(`${BASE_URL}/horarios/${id_empleado}`, horario);
+        const response = await axios.put(`${BASE_URL}/horarios/${id_horario}`, horario);
         return response.data;
     } catch (error) {
-        console.error(`Error al actualizar horario con ID ${id_empleado}:`, error);
+        console.error(`Error al actualizar horario con ID ${id_horario}:`, error);
         throw error;
     }
 };
 
-export const deleteHorario = async (id_empleado) => {
+export const deleteHorario = async (id_horario) => {
     try {
-        const response = await axios.delete(`${BASE_URL}/horarios/${id_empleado}`);
+        const response = await axios.delete(`${BASE_URL}/horarios/${id_horario}`);
         return response.data;
     } catch (error) {
-        console.error(`Error al eliminar horario con ID ${id_empleado}:`, error);
+        console.error(`Error al eliminar horario con ID ${id_horario}:`, error);
         throw error;
     }
 };
