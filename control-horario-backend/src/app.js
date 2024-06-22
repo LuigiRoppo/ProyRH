@@ -86,6 +86,36 @@ app.get('/empleados/:id_empleado', async (req, res) => {
     }
 });
 
+app.get('/ultimo-registro/:id_empleado', async (req, res) => {
+    const idEmpleado = req.params.id_empleado;
+    const sql = `
+        SELECT * FROM registros_horarios
+        WHERE id_empleado = $1
+        AND hora_salida IS NULL
+        ORDER BY id_registro DESC
+        LIMIT 1
+    `;
+
+    try {
+        const result = await client.query(sql, [idEmpleado]);
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.get('/registros/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
+    const { start, end } = req.query;
+
+    try {
+        const result = await client.query('SELECT * FROM registros_horarios WHERE id_empleado = $1 AND fecha BETWEEN $2 AND $3', [id_empleado, start, end]);
+        res.send(result.rows);
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+});
+
 // Marcar entrada
 app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada } = req.body;
@@ -130,6 +160,20 @@ app.post('/marcar-entrada', async (req, res) => {
         }
     } catch (err) {
         console.log('Error al marcar entrada:', err.message);
+        res.status(500).send({ error: err.message });
+    }
+});
+app.get('/horario/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
+    console.log(`Obteniendo horario para el empleado con ID: ${id_empleado}`);
+    try {
+        const result = await client.query('SELECT * FROM horarios WHERE id_empleado = $1', [id_empleado]);
+        if (result.rows.length > 0) {
+            res.send(result.rows);
+        } else {
+            res.status(404).send({ message: 'Horario no encontrado para el empleado' });
+        }
+    } catch (err) {
         res.status(500).send({ error: err.message });
     }
 });
@@ -178,35 +222,7 @@ app.post('/empleados', async (req, res) => {
     }
 });
 
-app.get('/ultimo-registro/:id_empleado', async (req, res) => {
-    const idEmpleado = req.params.id_empleado;
-    const sql = `
-        SELECT * FROM registros_horarios
-        WHERE id_empleado = $1
-        AND hora_salida IS NULL
-        ORDER BY id_registro DESC
-        LIMIT 1
-    `;
 
-    try {
-        const result = await client.query(sql, [idEmpleado]);
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-});
-
-app.get('/registros/:id_empleado', async (req, res) => {
-    const { id_empleado } = req.params;
-    const { start, end } = req.query;
-
-    try {
-        const result = await client.query('SELECT * FROM registros_horarios WHERE id_empleado = $1 AND fecha BETWEEN $2 AND $3', [id_empleado, start, end]);
-        res.send(result.rows);
-    } catch (err) {
-        res.status(500).send({ error: err.message });
-    }
-});
 
 app.delete('/horarios/:id_horario', async (req, res) => {
     const { id_horario } = req.params;
