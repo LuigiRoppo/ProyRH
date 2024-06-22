@@ -91,18 +91,49 @@ app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada } = req.body;
     console.log(`Datos recibidos para marcar entrada: ${JSON.stringify(req.body)}`);
 
+    const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+    const diaSemana = new Date(fecha).getDay();
+    const diaNombre = diaIndices[diaSemana];
+
     try {
-        const result = await client.query(
-            'INSERT INTO registros_horarios (id_empleado, fecha, hora_entrada) VALUES ($1, $2, $3) RETURNING id_registro',
-            [id_empleado, fecha, hora_entrada]
-        );
-        console.log('Entrada marcada con éxito para el empleado', id_empleado);
-        res.send({ message: 'Entrada marcada con éxito', id_registro: result.rows[0].id_registro });
+        const registrosPendientes = await client.query('SELECT * FROM registros_horarios WHERE id_empleado = $1 AND hora_salida IS NULL', [id_empleado]);
+        if (registrosPendientes.rows.length > 0) {
+            return res.status(403).send({ message: 'No se puede registrar una nueva entrada mientras exista una entrada sin salida registrada.' });
+        }
+
+        const horarios = await client.query('SELECT hora_inicio FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
+        console.log('Horarios obtenidos de la DB:', horarios.rows);
+
+        if (horarios.rows.length > 0) {
+            const horario = horarios.rows[0];
+            const ahora = moment(hora_entrada, 'HH:mm:ss').tz('Europe/Madrid');
+            const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(30, 'minutes').tz('Europe/Madrid');
+
+            console.log(`Horario seleccionado desde la DB: inicio=${horario.hora_inicio}`);
+            console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
+            console.log(`Hora de inicio permitida: ${horaInicioPermitida.format('HH:mm:ss')}`);
+
+            if (ahora.isSameOrAfter(horaInicioPermitida)) {
+                const result = await client.query(
+                    'INSERT INTO registros_horarios (id_empleado, fecha, hora_entrada) VALUES ($1, $2, $3) RETURNING id_registro',
+                    [id_empleado, fecha, hora_entrada]
+                );
+                console.log('Entrada marcada con éxito para el empleado', id_empleado);
+                res.send({ message: 'Entrada marcada con éxito', id_registro: result.rows[0].id_registro });
+            } else {
+                console.log('No se permite marcar entrada antes de los 30 minutos permitidos');
+                res.status(403).send({ message: 'No se permite marcar entrada antes de los 30 minutos permitidos' });
+            }
+        } else {
+            console.log('Horario no encontrado para el empleado', id_empleado);
+            res.status(404).send({ message: 'Horario no encontrado para el empleado' });
+        }
     } catch (err) {
         console.log('Error al marcar entrada:', err.message);
         res.status(500).send({ error: err.message });
     }
 });
+
 
 // Marcar salida
 app.post('/marcar-salida', async (req, res) => {
