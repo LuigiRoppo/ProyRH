@@ -57,7 +57,7 @@ export const getHorarios = async () => {
 
 export const getHorarioByEmpleadoId = async (id_empleado) => {
     try {
-        const response = await axios.get(`${BASE_URL}/horarios/${id_empleado}`);
+        const response = await axios.get(`${BASE_URL}/horario/${id_empleado}`);
         return response.data;
     } catch (error) {
         console.error(`Error al obtener horario para empleado con ID ${id_empleado}:`, error);

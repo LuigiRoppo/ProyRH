@@ -115,7 +115,28 @@ app.get('/registros/:id_empleado', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
+app.get('/horario/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
+    console.log(`Obteniendo horario para el empleado con ID: ${id_empleado}`);
+    try {
+        const result = await client.query('SELECT * FROM horarios WHERE id_empleado = $1', [id_empleado]);
+        if (result.rows.length > 0) {
+            res.send(result.rows);
+        } else {
+            res.status(404).send({ message: 'Horario no encontrado para el empleado' });
+        }
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+});
+app.get('/horarios', async (req, res) => {
+    try {
+        const result = await client.query("SELECT * FROM horarios");
+        res.send(result.rows);
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+});
 // Marcar entrada
 app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada } = req.body;
@@ -163,22 +184,6 @@ app.post('/marcar-entrada', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-app.get('/horario/:id_empleado', async (req, res) => {
-    const { id_empleado } = req.params;
-    console.log(`Obteniendo horario para el empleado con ID: ${id_empleado}`);
-    try {
-        const result = await client.query('SELECT * FROM horarios WHERE id_empleado = $1', [id_empleado]);
-        if (result.rows.length > 0) {
-            res.send(result.rows);
-        } else {
-            res.status(404).send({ message: 'Horario no encontrado para el empleado' });
-        }
-    } catch (err) {
-        res.status(500).send({ error: err.message });
-    }
-});
-
-
 // Marcar salida
 app.post('/marcar-salida', async (req, res) => {
     const { id_registro, hora_salida } = req.body;
