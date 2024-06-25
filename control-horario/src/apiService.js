@@ -13,7 +13,6 @@ export const getEmpleados = async () => {
         throw error;
     }
 };
-
 export const getEmpleadoById = async (id_empleado) => {
     try {
         const response = await axios.get(`${BASE_URL}/empleados/${id_empleado}`);
@@ -23,7 +22,6 @@ export const getEmpleadoById = async (id_empleado) => {
         throw error;
     }
 };
-
 export const createEmpleado = async (empleado) => {
     try {
         const response = await axios.post(`${BASE_URL}/empleados`, empleado);
@@ -33,7 +31,6 @@ export const createEmpleado = async (empleado) => {
         throw error;
     }
 };
-
 export const deleteEmpleado = async (id_empleado) => {
     try {
         const response = await axios.delete(`${BASE_URL}/empleados/${id_empleado}`);
@@ -43,8 +40,6 @@ export const deleteEmpleado = async (id_empleado) => {
         throw error.response ? error.response.data : new Error('Error al eliminar empleado');
     }
 };
-
-// Funciones de Horarios
 export const getHorarios = async () => {
     try {
         const response = await axios.get(`${BASE_URL}/horarios`);
@@ -54,7 +49,6 @@ export const getHorarios = async () => {
         throw error;
     }
 };
-
 export const getHorarioByEmpleadoId = async (id_empleado) => {
     try {
         const response = await axios.get(`${BASE_URL}/horario/${id_empleado}`);
@@ -64,7 +58,6 @@ export const getHorarioByEmpleadoId = async (id_empleado) => {
         throw error;
     }
 };
-
 export const createHorarios = async (idEmpleado, horarios) => {
     try {
         const response = await axios.post(`${BASE_URL}/horarios`, { idEmpleado, horarios });
@@ -74,7 +67,6 @@ export const createHorarios = async (idEmpleado, horarios) => {
         throw error;
     }
 };
-
 export const updateHorario = async (id_horario, horario) => {
     try {
         const response = await axios.put(`${BASE_URL}/horarios/${id_horario}`, horario);
@@ -84,7 +76,6 @@ export const updateHorario = async (id_horario, horario) => {
         throw error;
     }
 };
-
 export const deleteHorario = async (id_horario) => {
     try {
         const response = await axios.delete(`${BASE_URL}/horarios/${id_horario}`);
@@ -94,8 +85,6 @@ export const deleteHorario = async (id_horario) => {
         throw error;
     }
 };
-
-// Funciones de Registros
 export const getUltimoRegistroByEmpleadoId = async (idEmpleado) => {
     try {
         const response = await axios.get(`${BASE_URL}/ultimo-registro/${idEmpleado}`);
@@ -105,7 +94,6 @@ export const getUltimoRegistroByEmpleadoId = async (idEmpleado) => {
         throw error;
     }
 };
-
 export const getRegistrosByEmpleadoId = async (id_empleado, start, end) => {
     try {
         const response = await axios.get(`${BASE_URL}/registros/${id_empleado}`, {
@@ -117,7 +105,6 @@ export const getRegistrosByEmpleadoId = async (id_empleado, start, end) => {
         throw error;
     }
 };
-
 export const marcarEntrada = async (registro) => {
     try {
         console.log('Enviando datos a marcarEntrada:', registro);

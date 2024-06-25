@@ -59,9 +59,12 @@ client.connect(err => {
     }
   });
 
-const verificarYActualizarRegistrosPendientes = async () => {
+  const verificarYActualizarRegistrosPendientes = async () => {
     try {
+        console.log("Iniciando verificación de registros pendientes...");
         const registros = await client.query('SELECT id_registro, id_empleado, fecha, hora_entrada FROM registros_horarios WHERE hora_salida IS NULL');
+        console.log("Registros pendientes obtenidos:", registros.rows);
+
         for (const registro of registros.rows) {
             const { id_registro, id_empleado, fecha, hora_entrada } = registro;
             const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
@@ -70,10 +73,13 @@ const verificarYActualizarRegistrosPendientes = async () => {
             const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
             const horarios = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
+            console.log(`Horarios obtenidos para empleado ${id_empleado} en día ${diaNombre}:`, horarios.rows);
 
             if (horarios.rows.length > 0) {
                 const ahora = moment().tz('Europe/Madrid');
+                console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
+                // Encuentra la hora de fin más cercana después de la hora de entrada
                 const horaFinPermitida = horarios.rows
                     .map(h => moment(`${fecha}T${h.hora_fin}`).tz('Europe/Madrid'))
                     .filter(horaFin => horaFin.isAfter(moment(`${fecha}T${hora_entrada}`).tz('Europe/Madrid')))
@@ -81,19 +87,26 @@ const verificarYActualizarRegistrosPendientes = async () => {
                         return current.isBefore(earliest) ? current : earliest;
                     }, moment('9999-12-31T23:59:59').tz('Europe/Madrid'));
 
+                console.log("Hora fin permitida:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
+
                 if (ahora.isAfter(horaFinPermitida.add(30, 'minutes'))) {
-                    const horaSalida = horaFinPermitida.format('HH:mm:ss');
+                    const horaSalida = ahora.format('HH:mm:ss');
                     await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
                     console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
+                } else {
+                    console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro}`);
                 }
+            } else {
+                console.log(`No se encontraron horarios para el empleado ${id_empleado} en el día ${diaNombre}`);
             }
         }
     } catch (err) {
         console.error("Error en la consulta de registros pendientes:", err.message);
     }
 };
-setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
 
+// Ejecutar la función cada minuto para pruebas
+setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
 
 
 app.get('/empleados', async (req, res) => {
@@ -224,6 +237,7 @@ app.post('/marcar-salida', async (req, res) => {
             'UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2',
             [hora_salida, id_registro]
         );
+        console.log(`Salida marcada con éxito para el registro ${id_registro} a las ${hora_salida}`);
         res.send({ message: 'Salida marcada con éxito' });
     } catch (err) {
         console.error("Error al marcar salida:", err.message);

@@ -23,7 +23,6 @@ function AddEmployeeForm() {
             alert('Error al buscar el empleado');
         }
     };
-
     const handleEntrada = async () => {
         const now = moment().tz('Europe/Madrid'); 
         const fecha = now.format('YYYY-MM-DD');
@@ -68,8 +67,6 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación');
         }
     };
-    
-
     const handleSalida = async () => {
         if (!employeeId) {
             alert("Primero debe ingresar su ID de empleado.");
@@ -96,7 +93,6 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación de salida');
         }
     };
-    
     const resetForm = () => {
         setEmployeeId('');
         setEmployeeName('');
