@@ -32,7 +32,6 @@ app.use(cors({
 
 app.use(express.json());
 app.use(bodyParser.json());
-
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
@@ -60,7 +59,7 @@ client.connect(err => {
     }
   });
 
-// Rutas
+
 app.get('/empleados', async (req, res) => {
     try {
         const result = await client.query('SELECT * FROM empleados');
@@ -70,7 +69,6 @@ app.get('/empleados', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-
 app.get('/empleados/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
     try {
@@ -85,7 +83,6 @@ app.get('/empleados/:id_empleado', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
     const idEmpleado = req.params.id_empleado;
     const sql = `
@@ -103,7 +100,6 @@ app.get('/ultimo-registro/:id_empleado', async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
-
 app.get('/registros/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
     const { start, end } = req.query;
@@ -137,7 +133,7 @@ app.get('/horarios', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-// Marcar entrada
+
 app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada } = req.body;
     console.log(`Datos recibidos para marcar entrada: ${JSON.stringify(req.body)}`);
@@ -184,7 +180,6 @@ app.post('/marcar-entrada', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-// Marcar salida
 app.post('/marcar-salida', async (req, res) => {
     const { id_registro, hora_salida } = req.body;
     console.log(`Intentando marcar salida para el registro con ID: ${id_registro}`);
@@ -200,7 +195,6 @@ app.post('/marcar-salida', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
 app.post('/horarios', async (req, res) => {
     const { idEmpleado, horarios } = req.body;
     const sql = 'INSERT INTO horarios (id_empleado, dia_semana, hora_inicio, hora_fin) VALUES ($1, $2, $3, $4)';
@@ -214,7 +208,6 @@ app.post('/horarios', async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
-
 app.post('/empleados', async (req, res) => {
     const { nombre, ubicacion } = req.body;
 
@@ -226,6 +219,7 @@ app.post('/empleados', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 
 app.put('/horarios/:id_horario', async (req, res) => {
     const { id_horario } = req.params;
@@ -256,19 +250,28 @@ app.delete('/horarios/:id_horario', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
 app.delete('/empleados/:id_empleado', async (req, res) => {
     const id_empleado = req.params.id_empleado;
-    const sql = 'DELETE FROM empleados WHERE id_empleado = $1';
-    
+
     try {
+        // Verificar si el empleado tiene registros relacionados en otras tablas
+        const registrosRelacionados = await client.query('SELECT COUNT(*) FROM registros_horarios WHERE id_empleado = $1', [id_empleado]);
+
+        if (registrosRelacionados.rows[0].count > 0) {
+            // Si existen registros relacionados, no permitir la eliminación
+            return res.status(400).json({ message: `No se puede eliminar el empleado con ID ${id_empleado} porque tiene registros relacionados.` });
+        }
+
+        const sql = 'DELETE FROM empleados WHERE id_empleado = $1';
         const result = await client.query(sql, [id_empleado]);
+
         res.json({ message: `Empleado con id_empleado ${id_empleado} eliminado` });
     } catch (err) {
         console.error('Error al eliminar empleado:', err.message);
         res.status(500).json({ error: err.message });
     }
 });
+
 
 async function generateUniqueId() {
     let id_empleado;
