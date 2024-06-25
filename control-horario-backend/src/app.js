@@ -68,7 +68,7 @@ client.connect(err => {
         for (const registro of registros.rows) {
             const { id_registro, id_empleado, fecha, hora_entrada } = registro;
             const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-            const diaSemana = new Date(fecha).getDay();
+            const diaSemana = new Date().getDay();  // Usar la fecha actual
             const diaNombreOriginal = diaIndices[diaSemana];
             const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
@@ -79,7 +79,7 @@ client.connect(err => {
                 const ahora = moment().tz('Europe/Madrid');
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
-                const horaFinPermitida = moment(`${fecha.toISOString().split('T')[0]}T${horarios.rows[0].hora_fin}`).tz('Europe/Madrid');
+                const horaFinPermitida = moment(`${ahora.format('YYYY-MM-DD')}T${horarios.rows[0].hora_fin}`).tz('Europe/Madrid');  // Usar la fecha actual
                 console.log("Hora fin permitida antes de agregar 1 minuto:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
                 const horaFinPermitidaConMinuto = horaFinPermitida.clone().add(1, 'minutes');
@@ -253,7 +253,7 @@ app.post('/marcar-salida', async (req, res) => {
 
         const { id_registro, fecha } = registro.rows[0];
         const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-        const diaSemana = new Date(fecha).getDay();
+        const diaSemana = new Date().getDay();  // Usar la fecha actual
         const diaNombre = diaIndices[diaSemana];
 
         const horario = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
@@ -267,8 +267,8 @@ app.post('/marcar-salida', async (req, res) => {
 
         const ahora = moment().tz('Europe/Madrid');
         const horaFinPermitida = horario.rows[0].hora_fin === "00:00"
-            ? moment(`${fecha.toISOString().split('T')[0]}T23:59:59`).add(1, 'minutes').tz('Europe/Madrid')
-            : moment(`${fecha.toISOString().split('T')[0]}T${horario.rows[0].hora_fin}`).tz('Europe/Madrid').add(1, 'minutes');
+            ? moment(`${ahora.format('YYYY-MM-DD')}T23:59:59`).add(1, 'minutes').tz('Europe/Madrid')
+            : moment(`${ahora.format('YYYY-MM-DD')}T${horario.rows[0].hora_fin}`).tz('Europe/Madrid').add(1, 'minutes');
 
         console.log(`Hora fin permitida: ${horaFinPermitida.format('HH:mm:ss')}`);
         console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
@@ -287,6 +287,7 @@ app.post('/marcar-salida', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 app.post('/horarios', async (req, res) => {
     const { idEmpleado, horarios } = req.body;
     const sql = 'INSERT INTO horarios (id_empleado, dia_semana, hora_inicio, hora_fin) VALUES ($1, $2, $3, $4)';
