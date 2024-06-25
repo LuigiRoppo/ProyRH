@@ -59,7 +59,7 @@ client.connect(err => {
     }
   });
 
-  const verificarYActualizarRegistrosPendientes = async () => {
+const verificarYActualizarRegistrosPendientes = async () => {
     try {
         console.log("Iniciando verificación de registros pendientes...");
         const registros = await client.query('SELECT id_registro, id_empleado, fecha, hora_entrada FROM registros_horarios WHERE hora_salida IS NULL');
@@ -81,11 +81,11 @@ client.connect(err => {
 
                 // Encuentra la hora de fin más cercana después de la hora de entrada
                 const horaFinPermitida = horarios.rows
-                    .map(h => moment(`${fecha}T${h.hora_fin}`).tz('Europe/Madrid'))
-                    .filter(horaFin => horaFin.isAfter(moment(`${fecha}T${hora_entrada}`).tz('Europe/Madrid')))
+                    .map(h => moment(`${fecha.toISOString().split('T')[0]}T${h.hora_fin}`).tz('Europe/Madrid'))
+                    .filter(horaFin => horaFin.isAfter(moment(`${fecha.toISOString().split('T')[0]}T${hora_entrada}`).tz('Europe/Madrid')))
                     .reduce((earliest, current) => {
                         return current.isBefore(earliest) ? current : earliest;
-                    }, moment('9999-12-31T23:59:59').tz('Europe/Madrid'));
+                    }, moment(`${fecha.toISOString().split('T')[0]}T23:59:59`).tz('Europe/Madrid'));
 
                 console.log("Hora fin permitida:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
@@ -104,9 +104,9 @@ client.connect(err => {
         console.error("Error en la consulta de registros pendientes:", err.message);
     }
 };
-
-// Ejecutar la función cada minuto para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
+
+
 
 
 app.get('/empleados', async (req, res) => {
