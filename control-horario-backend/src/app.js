@@ -254,8 +254,17 @@ app.delete('/empleados/:id_empleado', async (req, res) => {
     const id_empleado = req.params.id_empleado;
 
     try {
+        // Eliminar las restricciones de clave externa temporalmente
+        await client.query('ALTER TABLE registros_horarios DROP CONSTRAINT IF EXISTS registros_horarios_id_empleado_fkey');
+        await client.query('ALTER TABLE horarios DROP CONSTRAINT IF EXISTS horarios_id_empleado_fkey');
+
+        // Eliminar al empleado
         const sql = 'DELETE FROM empleados WHERE id_empleado = $1';
-        const result = await client.query(sql, [id_empleado]);
+        await client.query(sql, [id_empleado]);
+
+        // Volver a agregar las restricciones de clave externa
+        await client.query('ALTER TABLE registros_horarios ADD CONSTRAINT registros_horarios_id_empleado_fkey FOREIGN KEY (id_empleado) REFERENCES empleados(id_empleado)');
+        await client.query('ALTER TABLE horarios ADD CONSTRAINT horarios_id_empleado_fkey FOREIGN KEY (id_empleado) REFERENCES empleados(id_empleado)');
 
         res.json({ message: `Empleado con id_empleado ${id_empleado} eliminado` });
     } catch (err) {
@@ -263,6 +272,7 @@ app.delete('/empleados/:id_empleado', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 
 
