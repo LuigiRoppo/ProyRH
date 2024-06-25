@@ -110,8 +110,6 @@ setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
 
 
 
-
-
 app.get('/empleados', async (req, res) => {
     try {
         const result = await client.query('SELECT * FROM empleados');
