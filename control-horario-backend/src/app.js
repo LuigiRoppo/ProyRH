@@ -81,14 +81,16 @@ const verificarYActualizarRegistrosPendientes = async () => {
 
                 // Encuentra la hora de fin más cercana después de la hora de entrada
                 const horaFinPermitida = horarios.rows
-                    .map(h => moment.tz(`${fecha.toISOString().split('T')[0]}T${h.hora_fin}`, 'Europe/Madrid'))
+                    .map(h => moment(`${fecha.toISOString().split('T')[0]}T${h.hora_fin}`).tz('Europe/Madrid'))
+                    .filter(horaFin => horaFin.isAfter(moment(`${fecha.toISOString().split('T')[0]}T${hora_entrada}`).tz('Europe/Madrid')))
                     .reduce((earliest, current) => {
                         return current.isBefore(earliest) ? current : earliest;
-                    });
+                    }, moment(`${fecha.toISOString().split('T')[0]}T23:59:59`).tz('Europe/Madrid'));
 
-                console.log("Hora fin permitida:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
+                console.log("Hora fin permitida antes de agregar 1 minuto:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
                 if (ahora.isAfter(horaFinPermitida.add(1, 'minutes'))) {
+                    console.log("Condición de tiempo cumplida, actualizando registro...");
                     const horaSalida = ahora.format('HH:mm:ss');
                     await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
                     console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
@@ -104,8 +106,8 @@ const verificarYActualizarRegistrosPendientes = async () => {
     }
 };
 
+// Ejecutar la función cada minuto para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
-
 
 
 app.get('/empleados', async (req, res) => {
