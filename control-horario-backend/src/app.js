@@ -58,8 +58,7 @@ client.connect(err => {
       });
     }
   });
-
-const verificarYActualizarRegistrosPendientes = async () => {
+  const verificarYActualizarRegistrosPendientes = async () => {
     try {
         console.log("Iniciando verificación de registros pendientes...");
         const registros = await client.query('SELECT id_registro, id_empleado, fecha, hora_entrada FROM registros_horarios WHERE hora_salida IS NULL');
@@ -81,15 +80,14 @@ const verificarYActualizarRegistrosPendientes = async () => {
 
                 // Encuentra la hora de fin más cercana después de la hora de entrada
                 const horaFinPermitida = horarios.rows
-                    .map(h => moment(`${fecha.toISOString().split('T')[0]}T${h.hora_fin}`).tz('Europe/Madrid'))
-                    .filter(horaFin => horaFin.isAfter(moment(`${fecha.toISOString().split('T')[0]}T${hora_entrada}`).tz('Europe/Madrid')))
+                    .map(h => moment.tz(`${fecha.toISOString().split('T')[0]}T${h.hora_fin}`, 'Europe/Madrid'))
                     .reduce((earliest, current) => {
                         return current.isBefore(earliest) ? current : earliest;
-                    }, moment(`${fecha.toISOString().split('T')[0]}T23:59:59`).tz('Europe/Madrid'));
+                    });
 
                 console.log("Hora fin permitida:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
-                if (ahora.isAfter(horaFinPermitida.add(30, 'minutes'))) {
+                if (ahora.isAfter(horaFinPermitida.add(1, 'minutes'))) {
                     const horaSalida = ahora.format('HH:mm:ss');
                     await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
                     console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
@@ -104,6 +102,8 @@ const verificarYActualizarRegistrosPendientes = async () => {
         console.error("Error en la consulta de registros pendientes:", err.message);
     }
 };
+
+// Ejecutar la función cada minuto para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
 
 
