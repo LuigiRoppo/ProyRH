@@ -85,6 +85,8 @@ client.connect(err => {
                 const horaFinPermitidaConMinuto = horaFinPermitida.clone().add(1, 'minutes');
                 console.log("Hora fin permitida después de agregar 1 minuto:", horaFinPermitidaConMinuto.format('YYYY-MM-DD HH:mm:ss'));
 
+                console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinPermitidaConMinuto.format('YYYY-MM-DD HH:mm:ss')}): ${ahora.isAfter(horaFinPermitidaConMinuto)}`);
+
                 if (ahora.isAfter(horaFinPermitidaConMinuto)) {
                     console.log("Condición de tiempo cumplida, actualizando registro...");
                     const horaSalida = ahora.format('HH:mm:ss');
@@ -104,6 +106,7 @@ client.connect(err => {
 
 // Ejecutar la función cada minuto para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
+
 
 
 
