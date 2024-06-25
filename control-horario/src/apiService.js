@@ -39,8 +39,8 @@ export const deleteEmpleado = async (id_empleado) => {
         const response = await axios.delete(`${BASE_URL}/empleados/${id_empleado}`);
         return response.data;
     } catch (error) {
-        console.error(`Error al eliminar empleado con ID ${id_empleado}:`, error);
-        throw error;
+        console.error(`Error al eliminar empleado con ID ${id_empleado}:`, error.response ? error.response.data : error.message);
+        throw error.response ? error.response.data : new Error('Error al eliminar empleado');
     }
 };
 
