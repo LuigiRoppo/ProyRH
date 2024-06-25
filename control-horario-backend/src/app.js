@@ -90,6 +90,7 @@ client.connect(err => {
                 if (ahora.isAfter(horaFinPermitidaConMinuto)) {
                     console.log("Condición de tiempo cumplida, actualizando registro...");
                     const horaSalida = ahora.format('HH:mm:ss');
+                    console.log(`Hora actual antes de actualizar: ${ahora.format('HH:mm:ss')}`);
                     await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
                     console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
                 } else {
@@ -230,22 +231,62 @@ app.post('/marcar-entrada', async (req, res) => {
     }
 });
 app.post('/marcar-salida', async (req, res) => {
-    const { id_registro, hora_salida } = req.body;
-    console.log(`Intentando marcar salida para el registro con ID: ${id_registro} a las ${hora_salida}`);
+    const { id_empleado } = req.body;  // Cambiado a id_empleado para recibir el id_empleado del empleado
+
+    console.log(`Intentando marcar salida para el empleado con ID: ${id_empleado}`);
 
     try {
-        await client.query(
-            'UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2',
-            [hora_salida, id_registro]
-        );
-        console.log(`Salida marcada con éxito para el registro ${id_registro} a las ${hora_salida}`);
-        res.send({ message: 'Salida marcada con éxito' });
+        const registro = await client.query(`
+            SELECT id_registro, fecha, hora_entrada 
+            FROM registros_horarios 
+            WHERE id_empleado = $1 AND hora_salida IS NULL 
+            ORDER BY id_registro DESC 
+            LIMIT 1
+        `, [id_empleado]);
+
+        if (registro.rows.length === 0) {
+            console.log("No se encontró un registro de entrada sin salida para el empleado:", id_empleado);
+            return res.status(404).send({ message: 'No se encontró un registro de entrada sin salida para el empleado' });
+        }
+
+        console.log(`Registro encontrado: ${JSON.stringify(registro.rows[0])}`);
+
+        const { id_registro, fecha } = registro.rows[0];
+        const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+        const diaSemana = new Date(fecha).getDay();
+        const diaNombre = diaIndices[diaSemana];
+
+        const horario = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
+
+        if (horario.rows.length === 0) {
+            console.log("No se encontró horario para el empleado", id_empleado, "el día", diaNombre);
+            return res.status(404).send({ message: 'Horario no encontrado para el empleado' });
+        }
+
+        console.log(`Horario encontrado: ${JSON.stringify(horario.rows[0])}`);
+
+        const ahora = moment().tz('Europe/Madrid');
+        const horaFinPermitida = horario.rows[0].hora_fin === "00:00"
+            ? moment(`${fecha.toISOString().split('T')[0]}T23:59:59`).add(1, 'minutes').tz('Europe/Madrid')
+            : moment(`${fecha.toISOString().split('T')[0]}T${horario.rows[0].hora_fin}`).tz('Europe/Madrid').add(1, 'minutes');
+
+        console.log(`Hora fin permitida: ${horaFinPermitida.format('HH:mm:ss')}`);
+        console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
+
+        if (ahora.isSameOrBefore(horaFinPermitida)) {
+            const horaSalida = ahora.format('HH:mm:ss');
+            console.log(`Marcando salida con hora: ${horaSalida}`);
+            await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
+            res.send({ message: 'Salida marcada con éxito' });
+        } else {
+            console.log(`No se permite marcar salida después de las ${horaFinPermitida.format('HH:mm')}`);
+            res.status(403).send({ message: `No se permite marcar salida después de las ${horaFinPermitida.format('HH:mm')}` });
+        }
     } catch (err) {
-        console.error("Error al marcar salida:", err.message);
+        console.error("Error en la consulta del registro:", err.message);
         res.status(500).send({ error: err.message });
     }
 });
-
 app.post('/horarios', async (req, res) => {
     const { idEmpleado, horarios } = req.body;
     const sql = 'INSERT INTO horarios (id_empleado, dia_semana, hora_inicio, hora_fin) VALUES ($1, $2, $3, $4)';
