@@ -254,10 +254,6 @@ app.delete('/empleados/:id_empleado', async (req, res) => {
     const id_empleado = req.params.id_empleado;
 
     try {
-        // Eliminar registros relacionados en registros_horarios primero
-        await client.query('DELETE FROM registros_horarios WHERE id_empleado = $1', [id_empleado]);
-
-        // Luego eliminar el empleado
         const sql = 'DELETE FROM empleados WHERE id_empleado = $1';
         const result = await client.query(sql, [id_empleado]);
 
@@ -267,6 +263,7 @@ app.delete('/empleados/:id_empleado', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 
 
