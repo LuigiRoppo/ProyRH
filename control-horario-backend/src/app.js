@@ -81,9 +81,9 @@ client.connect(err => {
 
                 const horaFinPermitida = moment(`${fecha.toISOString().split('T')[0]}T${horarios.rows[0].hora_fin}`).tz('Europe/Madrid');
 
-                console.log("Hora fin permitida antes de agregar 1 minuto:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
+                console.log("Hora fin permitida antes de agregar 2 minuto:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
-                if (ahora.isAfter(horaFinPermitida.clone().add(1, 'minutes'))) {
+                if (ahora.isAfter(horaFinPermitida.clone().add(2, 'minutes'))) {
                     console.log("Condición de tiempo cumplida, actualizando registro...");
                     const horaSalida = ahora.format('HH:mm:ss');
                     await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
