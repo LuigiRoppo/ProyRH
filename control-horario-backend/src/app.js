@@ -59,6 +59,44 @@ client.connect(err => {
     }
   });
 
+  const verificarYActualizarRegistrosPendientes = async () => {
+    try {
+        const registros = await client.query('SELECT id_registro, id_empleado, fecha, hora_entrada FROM registros_horarios WHERE hora_salida IS NULL');
+        for (const registro of registros.rows) {
+            const { id_registro, id_empleado, fecha, hora_entrada } = registro;
+            const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+            const diaSemana = new Date(fecha).getDay();
+            const diaNombreOriginal = diaIndices[diaSemana];
+            const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            const horarios = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
+
+            if (horarios.rows.length > 0) {
+                const ahora = moment().tz('Europe/Madrid');
+
+                // Encuentra la hora de fin más cercana después de la hora de entrada
+                const horaFinPermitida = horarios.rows
+                    .map(h => moment(`${fecha}T${h.hora_fin}`).tz('Europe/Madrid'))
+                    .filter(horaFin => horaFin.isAfter(moment(`${fecha}T${hora_entrada}`).tz('Europe/Madrid')))
+                    .reduce((earliest, current) => {
+                        return current.isBefore(earliest) ? current : earliest;
+                    }, moment('9999-12-31T23:59:59').tz('Europe/Madrid'));
+
+                if (ahora.isAfter(horaFinPermitida)) {
+                    const horaSalida = horaFinPermitida.format('HH:mm:ss');
+                    await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
+                    console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
+                }
+            }
+        }
+    } catch (err) {
+        console.error("Error en la consulta de registros pendientes:", err.message);
+    }
+};
+
+// Ejecutar la función cada minuto para pruebas
+setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
+
 
 app.get('/empleados', async (req, res) => {
     try {
