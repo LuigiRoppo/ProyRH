@@ -105,7 +105,7 @@ app.get('/registros/:id_empleado', async (req, res) => {
     const { start, end } = req.query;
 
     try {
-        const result = await client.query('SELECT * FROM registros_horarios WHERE id_empleado = $1 AND fecha BETWEEN $2 AND $3', [id_empleado, start, end]);
+        const result = await client.query('SELECT id_registro, id_empleado, TO_CHAR(fecha, \'YYYY-MM-DD\') as fecha, hora_entrada, hora_salida FROM registros_horarios WHERE id_empleado = $1 AND fecha BETWEEN $2 AND $3', [id_empleado, start, end]);
         res.send(result.rows);
     } catch (err) {
         res.status(500).send({ error: err.message });
@@ -254,14 +254,10 @@ app.delete('/empleados/:id_empleado', async (req, res) => {
     const id_empleado = req.params.id_empleado;
 
     try {
-        // Verificar si el empleado tiene registros relacionados en otras tablas
-        const registrosRelacionados = await client.query('SELECT COUNT(*) FROM registros_horarios WHERE id_empleado = $1', [id_empleado]);
+        // Eliminar registros relacionados en registros_horarios primero
+        await client.query('DELETE FROM registros_horarios WHERE id_empleado = $1', [id_empleado]);
 
-        if (registrosRelacionados.rows[0].count > 0) {
-            // Si existen registros relacionados, no permitir la eliminación
-            return res.status(400).json({ message: `No se puede eliminar el empleado con ID ${id_empleado} porque tiene registros relacionados.` });
-        }
-
+        // Luego eliminar el empleado
         const sql = 'DELETE FROM empleados WHERE id_empleado = $1';
         const result = await client.query(sql, [id_empleado]);
 
@@ -271,6 +267,7 @@ app.delete('/empleados/:id_empleado', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
 
 
 async function generateUniqueId() {
