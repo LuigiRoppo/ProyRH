@@ -59,7 +59,7 @@ client.connect(err => {
     }
   });
 
-  const verificarYActualizarRegistrosPendientes = async () => {
+const verificarYActualizarRegistrosPendientes = async () => {
     try {
         console.log("Iniciando verificación de registros pendientes...");
         const registros = await client.query('SELECT id_registro, id_empleado, fecha, hora_entrada FROM registros_horarios WHERE hora_salida IS NULL');
@@ -79,7 +79,6 @@ client.connect(err => {
                 const ahora = moment().tz('Europe/Madrid');
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
-                // Encuentra la hora de fin más cercana después de la hora de entrada
                 const horaFinPermitida = horarios.rows
                     .map(h => moment(`${fecha.toISOString().split('T')[0]}T${h.hora_fin}`).tz('Europe/Madrid'))
                     .filter(horaFin => horaFin.isAfter(moment(`${fecha.toISOString().split('T')[0]}T${hora_entrada}`).tz('Europe/Madrid')))
@@ -89,7 +88,7 @@ client.connect(err => {
 
                 console.log("Hora fin permitida antes de agregar 1 minuto:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
-                if (ahora.isAfter(horaFinPermitida.add(1, 'minutes'))) {
+                if (ahora.isAfter(horaFinPermitida.clone().add(1, 'minutes'))) {
                     console.log("Condición de tiempo cumplida, actualizando registro...");
                     const horaSalida = ahora.format('HH:mm:ss');
                     await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
@@ -108,6 +107,7 @@ client.connect(err => {
 
 // Ejecutar la función cada minuto para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
+
 
 
 
@@ -232,7 +232,7 @@ app.post('/marcar-entrada', async (req, res) => {
 });
 app.post('/marcar-salida', async (req, res) => {
     const { id_registro, hora_salida } = req.body;
-    console.log(`Intentando marcar salida para el registro con ID: ${id_registro}`);
+    console.log(`Intentando marcar salida para el registro con ID: ${id_registro} a las ${hora_salida}`);
 
     try {
         await client.query(
