@@ -80,10 +80,12 @@ client.connect(err => {
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
                 const horaFinPermitida = moment(`${fecha.toISOString().split('T')[0]}T${horarios.rows[0].hora_fin}`).tz('Europe/Madrid');
+                console.log("Hora fin permitida antes de agregar 1 minuto:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
-                console.log("Hora fin permitida antes de agregar 2 minuto:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
+                const horaFinPermitidaConMinuto = horaFinPermitida.clone().add(1, 'minutes');
+                console.log("Hora fin permitida después de agregar 1 minuto:", horaFinPermitidaConMinuto.format('YYYY-MM-DD HH:mm:ss'));
 
-                if (ahora.isAfter(horaFinPermitida.clone().add(2, 'minutes'))) {
+                if (ahora.isAfter(horaFinPermitidaConMinuto)) {
                     console.log("Condición de tiempo cumplida, actualizando registro...");
                     const horaSalida = ahora.format('HH:mm:ss');
                     await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
@@ -100,7 +102,9 @@ client.connect(err => {
     }
 };
 
+// Ejecutar la función cada minuto para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
+
 
 
 
