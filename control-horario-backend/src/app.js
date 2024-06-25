@@ -59,7 +59,7 @@ client.connect(err => {
     }
   });
 
-  const verificarYActualizarRegistrosPendientes = async () => {
+const verificarYActualizarRegistrosPendientes = async () => {
     try {
         const registros = await client.query('SELECT id_registro, id_empleado, fecha, hora_entrada FROM registros_horarios WHERE hora_salida IS NULL');
         for (const registro of registros.rows) {
@@ -74,7 +74,6 @@ client.connect(err => {
             if (horarios.rows.length > 0) {
                 const ahora = moment().tz('Europe/Madrid');
 
-                // Encuentra la hora de fin más cercana después de la hora de entrada
                 const horaFinPermitida = horarios.rows
                     .map(h => moment(`${fecha}T${h.hora_fin}`).tz('Europe/Madrid'))
                     .filter(horaFin => horaFin.isAfter(moment(`${fecha}T${hora_entrada}`).tz('Europe/Madrid')))
@@ -82,7 +81,7 @@ client.connect(err => {
                         return current.isBefore(earliest) ? current : earliest;
                     }, moment('9999-12-31T23:59:59').tz('Europe/Madrid'));
 
-                if (ahora.isAfter(horaFinPermitida)) {
+                if (ahora.isAfter(horaFinPermitida.add(30, 'minutes'))) {
                     const horaSalida = horaFinPermitida.format('HH:mm:ss');
                     await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
                     console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
@@ -93,9 +92,8 @@ client.connect(err => {
         console.error("Error en la consulta de registros pendientes:", err.message);
     }
 };
-
-// Ejecutar la función cada minuto para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
+
 
 
 app.get('/empleados', async (req, res) => {
@@ -171,7 +169,6 @@ app.get('/horarios', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
 app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada } = req.body;
     console.log(`Datos recibidos para marcar entrada: ${JSON.stringify(req.body)}`);
@@ -257,8 +254,6 @@ app.post('/empleados', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
-
 app.put('/horarios/:id_horario', async (req, res) => {
     const { id_horario } = req.params;
     const { dia_semana, hora_inicio, hora_fin } = req.body;
@@ -276,7 +271,6 @@ app.put('/horarios/:id_horario', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
 app.delete('/horarios/:id_horario', async (req, res) => {
     const { id_horario } = req.params;
     const sql = 'DELETE FROM horarios WHERE id_horario = $1';

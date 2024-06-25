@@ -140,3 +140,4 @@ export const marcarSalida = async (registro) => {
         throw error;
     }
 };
+

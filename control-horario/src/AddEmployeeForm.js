@@ -75,7 +75,7 @@ function AddEmployeeForm() {
             alert("Primero debe ingresar su ID de empleado.");
             return;
         }
-
+    
         try {
             console.log('Consultando último registro para empleado ID:', employeeId);
             const ultimoRegistro = await getUltimoRegistroByEmpleadoId(employeeId);
@@ -96,7 +96,7 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación de salida');
         }
     };
-
+    
     const resetForm = () => {
         setEmployeeId('');
         setEmployeeName('');
