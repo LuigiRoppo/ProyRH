@@ -59,7 +59,7 @@ client.connect(err => {
     }
   });
 
-const verificarYActualizarRegistrosPendientes = async () => {
+  const verificarYActualizarRegistrosPendientes = async () => {
     try {
         console.log("Iniciando verificación de registros pendientes...");
         const registros = await client.query('SELECT id_registro, id_empleado, fecha, hora_entrada FROM registros_horarios WHERE hora_salida IS NULL');
@@ -79,12 +79,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 const ahora = moment().tz('Europe/Madrid');
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
-                const horaFinPermitida = horarios.rows
-                    .map(h => moment(`${fecha.toISOString().split('T')[0]}T${h.hora_fin}`).tz('Europe/Madrid'))
-                    .filter(horaFin => horaFin.isAfter(moment(`${fecha.toISOString().split('T')[0]}T${hora_entrada}`).tz('Europe/Madrid')))
-                    .reduce((earliest, current) => {
-                        return current.isBefore(earliest) ? current : earliest;
-                    }, moment(`${fecha.toISOString().split('T')[0]}T23:59:59`).tz('Europe/Madrid'));
+                const horaFinPermitida = moment(`${fecha.toISOString().split('T')[0]}T${horarios.rows[0].hora_fin}`).tz('Europe/Madrid');
 
                 console.log("Hora fin permitida antes de agregar 1 minuto:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
@@ -105,7 +100,6 @@ const verificarYActualizarRegistrosPendientes = async () => {
     }
 };
 
-// Ejecutar la función cada minuto para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
 
 
