@@ -58,7 +58,8 @@ client.connect(err => {
       });
     }
   });
-  const verificarYActualizarRegistrosPendientes = async () => {
+
+const verificarYActualizarRegistrosPendientes = async () => {
     try {
         console.log("Iniciando verificación de registros pendientes...");
         const registros = await client.query('SELECT id_registro, id_empleado, fecha, hora_entrada FROM registros_horarios WHERE hora_salida IS NULL');
@@ -103,9 +104,7 @@ client.connect(err => {
     }
 };
 
-// Ejecutar la función cada minuto para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
-
 
 
 
