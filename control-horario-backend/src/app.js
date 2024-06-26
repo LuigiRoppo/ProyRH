@@ -234,7 +234,7 @@ app.post('/marcar-entrada', async (req, res) => {
     }
 });
 app.post('/marcar-salida', async (req, res) => {
-    const { id_empleado } = req.body;
+    const { id_empleado } = req.body;  // Cambiado a id_empleado para recibir el id_empleado del empleado
 
     console.log(`Intentando marcar salida para el empleado con ID: ${id_empleado}`);
 
@@ -255,8 +255,8 @@ app.post('/marcar-salida', async (req, res) => {
         console.log(`Registro encontrado: ${JSON.stringify(registro.rows[0])}`);
 
         const { id_registro, fecha } = registro.rows[0];
-        const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-        const diaSemana = new Date().getDay();
+        const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+        const diaSemana = new Date().getDay();  // Usar la fecha actual
         const diaNombre = diaIndices[diaSemana];
 
         const horario = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
@@ -290,6 +290,7 @@ app.post('/marcar-salida', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 
 app.post('/horarios', async (req, res) => {
     const { idEmpleado, horarios } = req.body;

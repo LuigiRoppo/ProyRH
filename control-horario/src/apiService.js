@@ -126,3 +126,4 @@ export const marcarSalida = async (registro) => {
     }
 };
 
+
