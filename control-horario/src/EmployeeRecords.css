@@ -1,0 +1,25 @@
+.records-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.records-title {
+    margin-bottom: 20px;
+}
+
+.records-table {
+    width: 80%;
+    border-collapse: collapse;
+}
+
+.records-table th,
+.records-table td {
+    border: 1px solid #ccc;
+    padding: 8px;
+    text-align: left;
+}
+
+.records-table th {
+    background-color: #f2f2f2;
+}

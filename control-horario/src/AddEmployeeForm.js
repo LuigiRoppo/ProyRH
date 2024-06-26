@@ -13,7 +13,8 @@ function AddEmployeeForm() {
         try {
             const empleado = await getEmpleadoById(employeeId);
             if (empleado) {
-                setEmployeeName(empleado.nombre);  
+                const primerNombre = empleado.nombre.split(' ')[0]; 
+                setEmployeeName(primerNombre);  
                 setStep(2); 
             } else {
                 alert('ID de empleado no encontrado.');
@@ -23,6 +24,7 @@ function AddEmployeeForm() {
             alert('Error al buscar el empleado');
         }
     };
+    
     const handleEntrada = async () => {
         const now = moment().tz('Europe/Madrid'); 
         const fecha = now.format('YYYY-MM-DD');
@@ -116,7 +118,7 @@ function AddEmployeeForm() {
                 </div>
             ) : (
                 <div className="form-step">
-                    <h2>Hola, {employeeName}</h2>
+                    <h2>Hola, {employeeName}! =)</h2>
                     <div className="action-buttons">
                         <button onClick={handleEntrada} className="button">Marcar Entrada</button>
                         <button onClick={handleSalida} className="button">Marcar Salida</button>

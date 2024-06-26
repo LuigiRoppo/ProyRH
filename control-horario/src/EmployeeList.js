@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getEmpleados, deleteEmpleado } from './apiService'; // Importamos las funciones necesarias
+import { useNavigate } from 'react-router-dom';
+import { getEmpleados, deleteEmpleado } from './apiService'; 
 import './EmployeeList.css'; 
 
 function EmployeeList() {
     const [empleados, setEmpleados] = useState([]);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchEmployees();
@@ -24,7 +26,7 @@ function EmployeeList() {
             try {
                 await deleteEmpleado(id);
                 alert('Empleado eliminado con éxito');
-                fetchEmployees(); // Volver a cargar la lista de empleados
+                fetchEmployees(); 
             } catch (error) {
                 console.error('Error al eliminar empleado:', error);
                 alert('Error al eliminar empleado');
@@ -52,6 +54,7 @@ function EmployeeList() {
                             <td>{empleado.ubicacion}</td>
                             <td>
                                 <button onClick={() => handleDelete(empleado.id_empleado)} className="delete-button">Eliminar</button>
+                                <button onClick={() => navigate(`/employee-records/${empleado.id_empleado}`)} className="view-records-button">Ver Registros</button>
                             </td>
                         </tr>
                     ))}

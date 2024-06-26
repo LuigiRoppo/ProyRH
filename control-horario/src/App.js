@@ -8,11 +8,13 @@ import LoginPage from './LoginPage';
 import AdminDashboard from './AdminDashboard';  
 import EmployeeList from './EmployeeList';
 import EmployeeDashboard from './EmployeeDashboard';
+import EmployeeRecords from './EmployeeRecords';
 
 function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/employee-records/:id_empleado" element={<EmployeeRecords />} />
         <Route path="/EmployeeDashboard" element={<EmployeeDashboard />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
