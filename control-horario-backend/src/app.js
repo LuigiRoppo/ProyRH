@@ -111,6 +111,7 @@ setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
 
 
 
+
 app.get('/empleados', async (req, res) => {
     try {
         const result = await client.query('SELECT * FROM empleados');
@@ -287,6 +288,7 @@ app.post('/marcar-salida', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 
 app.post('/horarios', async (req, res) => {
     const { idEmpleado, horarios } = req.body;
