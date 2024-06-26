@@ -154,15 +154,14 @@ app.get('/ultimo-registro/:id_empleado', async (req, res) => {
 });
 app.get('/registros/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
-    const { start, end } = req.query;
 
     try {
-        const result = await client.query('SELECT id_registro, id_empleado, TO_CHAR(fecha, \'YYYY-MM-DD\') as fecha, hora_entrada, hora_salida FROM registros_horarios WHERE id_empleado = $1 AND fecha BETWEEN $2 AND $3', [id_empleado, start, end]);
+        const result = await client.query('SELECT id_registro, id_empleado, TO_CHAR(fecha, \'YYYY-MM-DD\') as fecha, hora_entrada, hora_salida FROM registros_horarios WHERE id_empleado = $1', [id_empleado]);
         res.send(result.rows);
     } catch (err) {
         res.status(500).send({ error: err.message });
     }
-});
+})
 app.get('/horario/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
     console.log(`Obteniendo horario para el empleado con ID: ${id_empleado}`);
@@ -235,7 +234,7 @@ app.post('/marcar-entrada', async (req, res) => {
     }
 });
 app.post('/marcar-salida', async (req, res) => {
-    const { id_empleado } = req.body;  // Cambiado a id_empleado para recibir el id_empleado del empleado
+    const { id_empleado } = req.body;
 
     console.log(`Intentando marcar salida para el empleado con ID: ${id_empleado}`);
 
@@ -257,7 +256,7 @@ app.post('/marcar-salida', async (req, res) => {
 
         const { id_registro, fecha } = registro.rows[0];
         const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-        const diaSemana = new Date().getDay();  // Usar la fecha actual
+        const diaSemana = new Date().getDay();
         const diaNombre = diaIndices[diaSemana];
 
         const horario = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
@@ -291,6 +290,7 @@ app.post('/marcar-salida', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 app.post('/horarios', async (req, res) => {
     const { idEmpleado, horarios } = req.body;
     const sql = 'INSERT INTO horarios (id_empleado, dia_semana, hora_inicio, hora_fin) VALUES ($1, $2, $3, $4)';

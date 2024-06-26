@@ -81,8 +81,7 @@ function AddEmployeeForm() {
             console.log('Último registro obtenido:', ultimoRegistro);
             if (ultimoRegistro && !ultimoRegistro.hora_salida) {
                 const salidaRespuesta = await marcarSalida({
-                    id_registro: ultimoRegistro.id_registro,
-                    hora_salida: moment().tz('Europe/Madrid').format('HH:mm:ss')
+                    id_empleado: employeeId
                 });
                 console.log('Respuesta de marcar salida:', salidaRespuesta);
                 alert('Hora de salida registrada: ' + salidaRespuesta.message);
@@ -95,6 +94,7 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación de salida');
         }
     };
+    
     const resetForm = () => {
         setEmployeeId('');
         setEmployeeName('');
