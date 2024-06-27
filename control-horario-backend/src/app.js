@@ -67,8 +67,8 @@ client.connect(err => {
 
         for (const registro of registros.rows) {
             const { id_registro, id_empleado, fecha, hora_entrada } = registro;
-            const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-            const diaSemana = new Date().getDay();  // Usar la fecha actual
+            const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+            const diaSemana = new Date(fecha).getDay();
             const diaNombreOriginal = diaIndices[diaSemana];
             const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
@@ -79,18 +79,25 @@ client.connect(err => {
                 const ahora = moment().tz('Europe/Madrid');
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
-                const horaFinPermitida = moment(`${ahora.format('YYYY-MM-DD')}T${horarios.rows[0].hora_fin}`).tz('Europe/Madrid');  // Usar la fecha actual
-                console.log("Hora fin permitida antes de agregar 1 minuto:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
+                // Encuentra la hora de fin más cercana después de la hora de entrada
+                const horaFinPermitida = horarios.rows
+                    .map(h => moment(`${fecha.toISOString().split('T')[0]}T${h.hora_fin}`).tz('Europe/Madrid'))
+                    .filter(horaFin => horaFin.isAfter(moment(`${fecha.toISOString().split('T')[0]}T${hora_entrada}`).tz('Europe/Madrid')))
+                    .reduce((earliest, current) => {
+                        return current.isBefore(earliest) ? current : earliest;
+                    }, moment(`${fecha.toISOString().split('T')[0]}T23:59:59`).tz('Europe/Madrid'));
 
-                const horaFinPermitidaConMinuto = horaFinPermitida.clone().add(1, 'minutes');
-                console.log("Hora fin permitida después de agregar 1 minuto:", horaFinPermitidaConMinuto.format('YYYY-MM-DD HH:mm:ss'));
+                console.log(`Hora fin permitida antes de agregar 30 minutos: ${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}`);
+                const horaFinPermitidaConBuffer = horaFinPermitida.add(30, 'minutes');
+                console.log(`Hora fin permitida después de agregar 30 minutos: ${horaFinPermitidaConBuffer.format('YYYY-MM-DD HH:mm:ss')}`);
 
-                console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinPermitidaConMinuto.format('YYYY-MM-DD HH:mm:ss')}): ${ahora.isAfter(horaFinPermitidaConMinuto)}`);
+                const ahoraStr = ahora.format('YYYY-MM-DD HH:mm:ss');
+                const horaFinPermitidaStr = horaFinPermitidaConBuffer.format('YYYY-MM-DD HH:mm:ss');
 
-                if (ahora.isAfter(horaFinPermitidaConMinuto)) {
-                    console.log("Condición de tiempo cumplida, actualizando registro...");
+                console.log(`Comparación de ahora (${ahoraStr}) con hora fin permitida (${horaFinPermitidaStr}): ${ahora.isAfter(horaFinPermitidaConBuffer)}`);
+
+                if (ahora.isAfter(horaFinPermitidaConBuffer)) {
                     const horaSalida = ahora.format('HH:mm:ss');
-                    console.log(`Hora actual antes de actualizar: ${ahora.format('HH:mm:ss')}`);
                     await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
                     console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
                 } else {
@@ -105,8 +112,9 @@ client.connect(err => {
     }
 };
 
-// Ejecutar la función cada minuto para pruebas
-setInterval(verificarYActualizarRegistrosPendientes, 1 * 60 * 1000);
+// Ejecutar la función cada 30 minutos
+setInterval(verificarYActualizarRegistrosPendientes, 30 * 60 * 1000);
+
 
 
 
