@@ -79,13 +79,18 @@ client.connect(err => {
                 const ahora = moment().tz('Europe/Madrid');
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
+                const fechaStr = fecha.toISOString().split('T')[0];
+                const entradaStr = `${fechaStr}T${hora_entrada}`;
+                const horaEntradaMoment = moment(entradaStr).tz('Europe/Madrid');
+                console.log("Hora de entrada:", horaEntradaMoment.format('YYYY-MM-DD HH:mm:ss'));
+
                 // Encuentra la hora de fin más cercana después de la hora de entrada
                 const horaFinPermitida = horarios.rows
-                    .map(h => moment(`${fecha.toISOString().split('T')[0]}T${h.hora_fin}`).tz('Europe/Madrid'))
-                    .filter(horaFin => horaFin.isAfter(moment(`${fecha.toISOString().split('T')[0]}T${hora_entrada}`).tz('Europe/Madrid')))
+                    .map(h => moment(`${fechaStr}T${h.hora_fin}`).tz('Europe/Madrid'))
+                    .filter(horaFin => horaFin.isAfter(horaEntradaMoment))
                     .reduce((earliest, current) => {
                         return current.isBefore(earliest) ? current : earliest;
-                    }, moment(`${fecha.toISOString().split('T')[0]}T23:59:59`).tz('Europe/Madrid'));
+                    }, moment(`${fechaStr}T23:59:59`).tz('Europe/Madrid'));
 
                 console.log(`Hora fin permitida antes de agregar 30 minutos: ${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}`);
                 const horaFinPermitidaConBuffer = horaFinPermitida.add(30, 'minutes');
@@ -114,7 +119,6 @@ client.connect(err => {
 
 // Ejecutar la función cada 30 minutos
 setInterval(verificarYActualizarRegistrosPendientes, 30 * 60 * 1000);
-
 
 
 
