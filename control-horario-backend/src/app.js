@@ -56,71 +56,6 @@ client.connect(err => {
     }
 });
 
-const calcularHorasTrabajadas = (horaEntrada, horaSalida) => {
-    const entrada = moment(horaEntrada, 'HH:mm:ss').tz('Europe/Madrid');
-    const salida = moment(horaSalida, 'HH:mm:ss').tz('Europe/Madrid');
-
-    if (salida.isBefore(entrada)) {
-        salida.add(1, 'day');
-    }
-
-    const duracion = moment.duration(salida.diff(entrada));
-    const horas = duracion.asHours();
-
-    return horas;
-};
-
-app.get('/ultimo-registro/:id_empleado', async (req, res) => {
-    const idEmpleado = req.params.id_empleado;
-    const sql = `
-        SELECT id_registro, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, hora_entrada 
-        FROM registros_horarios 
-        WHERE id_empleado = $1
-        AND hora_salida IS NULL
-        ORDER BY id_registro DESC
-        LIMIT 1
-    `;
-
-    try {
-        const result = await client.query(sql, [idEmpleado]);
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-});
-app.get('/registros/:id_empleado', async (req, res) => {
-    const { id_empleado } = req.params;
-
-    try {
-        const result = await client.query('SELECT id_registro, id_empleado, TO_CHAR(fecha, \'YYYY-MM-DD\') as fecha, hora_entrada, hora_salida FROM registros_horarios WHERE id_empleado = $1', [id_empleado]);
-        res.send(result.rows);
-    } catch (err) {
-        res.status(500).send({ error: err.message });
-    }
-});
-app.get('/horarios', async (req, res) => {
-    try {
-        const result = await client.query('SELECT * FROM horarios');
-        res.send(result.rows);
-    } catch (err) {
-        res.status(500).send({ error: err.message });
-    }
-});
-app.get('/horario/:id_empleado', async (req, res) => {
-    const { id_empleado } = req.params;
-    console.log(`Obteniendo horario para el empleado con ID: ${id_empleado}`);
-    try {
-        const result = await client.query('SELECT * FROM horarios WHERE id_empleado = $1', [id_empleado]);
-        if (result.rows.length > 0) {
-            res.send(result.rows);
-        } else {
-            res.status(404).send({ message: 'Horario no encontrado para el empleado' });
-        }
-    } catch (err) {
-        res.status(500).send({ error: err.message });
-    }
-});
-
 const verificarYActualizarRegistrosPendientes = async () => {
     try {
         console.log("Iniciando verificación de registros pendientes...");
@@ -152,8 +87,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
 
                 if (ahora.isAfter(horaFinPermitida)) {
                     const horaSalida = moment(fechaHoraFin).add(1, 'minutes').format('HH:mm:ss');
-                    const horasTrabajadas = calcularHorasTrabajadas(hora_entrada, horaSalida);
-                    await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+                    await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
                     console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
                 } else {
                     console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro}`);
@@ -168,6 +102,60 @@ const verificarYActualizarRegistrosPendientes = async () => {
 };
 
 setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+
+app.get('/ultimo-registro/:id_empleado', async (req, res) => {
+    const idEmpleado = req.params.id_empleado;
+    const sql = `
+        SELECT id_registro, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, hora_entrada 
+        FROM registros_horarios 
+        WHERE id_empleado = $1
+        AND hora_salida IS NULL
+        ORDER BY id_registro DESC
+        LIMIT 1
+    `;
+
+    try {
+        const result = await client.query(sql, [idEmpleado]);
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.get('/registros/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
+
+    try {
+        const result = await client.query('SELECT id_registro, id_empleado, TO_CHAR(fecha, \'YYYY-MM-DD\') as fecha, hora_entrada, hora_salida FROM registros_horarios WHERE id_empleado = $1', [id_empleado]);
+        res.send(result.rows);
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+});
+
+app.get('/horarios', async (req, res) => {
+    try {
+        const result = await client.query('SELECT * FROM horarios');
+        res.send(result.rows);
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+});
+
+app.get('/horario/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
+    console.log(`Obteniendo horario para el empleado con ID: ${id_empleado}`);
+    try {
+        const result = await client.query('SELECT * FROM horarios WHERE id_empleado = $1', [id_empleado]);
+        if (result.rows.length > 0) {
+            res.send(result.rows);
+        } else {
+            res.status(404).send({ message: 'Horario no encontrado para el empleado' });
+        }
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+});
 
 app.get('/empleados', async (req, res) => {
     try {
@@ -193,9 +181,6 @@ app.get('/empleados/:id_empleado', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-
-
-
 
 app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada } = req.body;
@@ -286,8 +271,7 @@ app.post('/marcar-salida', async (req, res) => {
 
         if (ahora.isSameOrBefore(horaFinPermitida)) {
             const horaSalida = ahora.format('HH:mm:ss');
-            const horasTrabajadas = calcularHorasTrabajadas(hora_entrada, horaSalida);
-            await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+            await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
             res.send({ message: 'Salida marcada con éxito' });
         } else {
             console.log(`No se permite marcar salida después de las ${horaFinPermitida.format('HH:mm')}`);
