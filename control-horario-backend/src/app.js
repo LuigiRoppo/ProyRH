@@ -59,7 +59,23 @@ client.connect(err => {
     }
   });
 
-  const verificarYActualizarRegistrosPendientes = async () => {
+
+const calcularHorasTrabajadas = (horaEntrada, horaSalida) => {
+    const entrada = moment(horaEntrada, 'HH:mm:ss').tz('Europe/Madrid');
+    const salida = moment(horaSalida, 'HH:mm:ss').tz('Europe/Madrid');
+
+    // Manejar cruces de medianoche
+    if (salida.isBefore(entrada)) {
+        salida.add(1, 'day');
+    }
+
+    const duracion = moment.duration(salida.diff(entrada));
+    const horas = duracion.asHours();
+
+    return horas;
+};
+
+const verificarYActualizarRegistrosPendientes = async () => {
     try {
         console.log("Iniciando verificación de registros pendientes...");
         const registros = await client.query('SELECT id_registro, id_empleado, fecha, hora_entrada FROM registros_horarios WHERE hora_salida IS NULL');
@@ -79,32 +95,35 @@ client.connect(err => {
                 const ahora = moment().tz('Europe/Madrid');
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
-                const fechaStr = fecha.toISOString().split('T')[0];
-                const entradaStr = `${fechaStr}T${hora_entrada}`;
-                const horaEntradaMoment = moment(entradaStr).tz('Europe/Madrid');
-                console.log("Hora de entrada:", horaEntradaMoment.format('YYYY-MM-DD HH:mm:ss'));
-
                 // Encuentra la hora de fin más cercana después de la hora de entrada
                 const horaFinPermitida = horarios.rows
-                    .map(h => moment(`${fechaStr}T${h.hora_fin}`).tz('Europe/Madrid'))
-                    .filter(horaFin => horaFin.isAfter(horaEntradaMoment))
+                    .map(h => {
+                        const horaFin = moment(`${fecha.toISOString().split('T')[0]}T${h.hora_fin}`).tz('Europe/Madrid');
+                        if (horaFin.isBefore(moment(`${fecha.toISOString().split('T')[0]}T${hora_entrada}`).tz('Europe/Madrid'))) {
+                            horaFin.add(1, 'day'); // Maneja cruces de medianoche
+                        }
+                        return horaFin;
+                    })
                     .reduce((earliest, current) => {
                         return current.isBefore(earliest) ? current : earliest;
-                    }, moment(`${fechaStr}T23:59:59`).tz('Europe/Madrid'));
+                    }, moment(`${fecha.toISOString().split('T')[0]}T23:59:59`).tz('Europe/Madrid'));
 
-                console.log(`Hora fin permitida antes de agregar 30 minutos: ${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}`);
-                const horaFinPermitidaConBuffer = horaFinPermitida.add(30, 'minutes');
-                console.log(`Hora fin permitida después de agregar 30 minutos: ${horaFinPermitidaConBuffer.format('YYYY-MM-DD HH:mm:ss')}`);
+                console.log("Hora fin permitida antes de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
+                horaFinPermitida.add(5, 'minutes');
+                console.log("Hora fin permitida después de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
-                const ahoraStr = ahora.format('YYYY-MM-DD HH:mm:ss');
-                const horaFinPermitidaStr = horaFinPermitidaConBuffer.format('YYYY-MM-DD HH:mm:ss');
+                console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}):`, ahora.isAfter(horaFinPermitida));
 
-                console.log(`Comparación de ahora (${ahoraStr}) con hora fin permitida (${horaFinPermitidaStr}): ${ahora.isAfter(horaFinPermitidaConBuffer)}`);
-
-                if (ahora.isAfter(horaFinPermitidaConBuffer)) {
+                if (ahora.isAfter(horaFinPermitida)) {
                     const horaSalida = ahora.format('HH:mm:ss');
-                    await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
-                    console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
+                    const horasTrabajadas = calcularHorasTrabajadas(hora_entrada, horaSalida);
+                    
+                    if (horasTrabajadas < 0) {
+                        console.error(`Horas trabajadas negativas detectadas para el registro ${id_registro}: ${horasTrabajadas}`);
+                    } else {
+                        await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
+                        console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
+                    }
                 } else {
                     console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro}`);
                 }
@@ -117,8 +136,8 @@ client.connect(err => {
     }
 };
 
-// Ejecutar la función cada 30 minutos
-setInterval(verificarYActualizarRegistrosPendientes, 30 * 60 * 1000);
+setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+
 
 
 
