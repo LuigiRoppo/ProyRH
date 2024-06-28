@@ -1,12 +1,12 @@
-require('dotenv').config(); 
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { Client } = require('pg'); 
+const { Client } = require('pg');
 const bodyParser = require('body-parser');
 const moment = require('moment-timezone');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 8080;
 
 // Log para verificar la ruta de DATABASE_URL
 console.log('DATABASE_URL:', process.env.DATABASE_URL);
@@ -47,17 +47,17 @@ const client = new Client({
 // Probar conexión a la base de datos
 client.connect(err => {
     if (err) {
-      console.error('Error acquiring client', err.stack);
+        console.error('Error acquiring client', err.stack);
     } else {
-      client.query('SELECT NOW()', (err, result) => {
-        if (err) {
-          console.error('Error executing query', err.stack);
-        } else {
-          console.log(result.rows);
-        }
-      });
+        client.query('SELECT NOW()', (err, result) => {
+            if (err) {
+                console.error('Error executing query', err.stack);
+            } else {
+                console.log(result.rows);
+            }
+        });
     }
-  });
+});
 
 const calcularHorasTrabajadas = (horaEntrada, horaSalida) => {
     const entrada = moment(horaEntrada, 'HH:mm:ss').tz('Europe/Madrid');
@@ -73,8 +73,6 @@ const calcularHorasTrabajadas = (horaEntrada, horaSalida) => {
 
     return horas;
 };
-
-client.connect();
 
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
     const idEmpleado = req.params.id_empleado;
@@ -148,8 +146,8 @@ const verificarYActualizarRegistrosPendientes = async () => {
 
                 // Usar la fecha del registro para crear la hora fin permitida
                 const fechaHoraFin = moment.tz(`${fecha}T${horarios.rows[0].hora_fin}`, 'Europe/Madrid');
-                const horaFinPermitida = fechaHoraFin.add(30, 'minutes');
-                console.log("Hora fin permitida después de agregar 30 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
+                const horaFinPermitida = fechaHoraFin.add(5, 'minutes');
+                console.log("Hora fin permitida después de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
                 const comparacion = ahora.isAfter(horaFinPermitida);  // Comparación simple de fechas
                 console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}): ${comparacion}`);
@@ -196,6 +194,30 @@ app.get('/empleados/:id_empleado', async (req, res) => {
     } catch (error) {
         console.error('Error fetching empleado:', error);
         res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+app.get('/horario/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
+    console.log(`Obteniendo horario para el empleado con ID: ${id_empleado}`);
+    try {
+        const result = await client.query('SELECT * FROM horarios WHERE id_empleado = $1', [id_empleado]);
+        if (result.rows.length > 0) {
+            res.send(result.rows);
+        } else {
+            res.status(404).send({ message: 'Horario no encontrado para el empleado' });
+        }
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+});
+
+app.get('/horarios', async (req, res) => {
+    try {
+        const result = await client.query("SELECT * FROM horarios");
+        res.send(result.rows);
+    } catch (err) {
+        res.status(500).send({ error: err.message });
     }
 });
 
@@ -247,7 +269,7 @@ app.post('/marcar-entrada', async (req, res) => {
 });
 
 app.post('/marcar-salida', async (req, res) => {
-    const { id_empleado } = req.body;
+    const { id_empleado } = req.body;  // Cambiado a id_empleado para recibir el id_empleado del empleado
 
     console.log(`Intentando marcar salida para el empleado con ID: ${id_empleado}`);
 
@@ -269,7 +291,7 @@ app.post('/marcar-salida', async (req, res) => {
 
         const { id_registro, fecha } = registro.rows[0];
         const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
-        const diaSemana = new Date().getDay();
+        const diaSemana = new Date(fecha).getDay();  // Usar la fecha actual
         const diaNombre = diaIndices[diaSemana];
 
         const horario = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
@@ -284,27 +306,25 @@ app.post('/marcar-salida', async (req, res) => {
         const ahora = moment().tz('Europe/Madrid');
         const horaFinPermitida = horario.rows[0].hora_fin === "00:00"
             ? moment(`${ahora.format('YYYY-MM-DD')}T23:59:59`).add(1, 'minutes').tz('Europe/Madrid')
-            : moment(`${fecha}T${horario.rows[0].hora_fin}`).tz('Europe/Madrid').add(30, 'minutes');
+            : moment(`${ahora.format('YYYY-MM-DD')}T${horario.rows[0].hora_fin}`).tz('Europe/Madrid').add(1, 'minutes');
 
         console.log(`Hora fin permitida: ${horaFinPermitida.format('HH:mm:ss')}`);
         console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
 
-        if (ahora.isAfter(horaFinPermitida)) {
-            const horaSalida = moment(fechaHoraFin).add(1, 'minutes').format('HH:mm:ss');
+        if (ahora.isSameOrBefore(horaFinPermitida)) {
+            const horaSalida = ahora.format('HH:mm:ss');
             console.log(`Marcando salida con hora: ${horaSalida}`);
-            const horasTrabajadas = calcularHorasTrabajadas(hora_entrada, horaSalida);
-            await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+            await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
             res.send({ message: 'Salida marcada con éxito' });
         } else {
-            console.log(`No se permite marcar salida antes de las ${horaFinPermitida.format('HH:mm')}`);
-            res.status(403).send({ message: `No se permite marcar salida antes de las ${horaFinPermitida.format('HH:mm')}` });
+            console.log(`No se permite marcar salida después de las ${horaFinPermitida.format('HH:mm')}`);
+            res.status(403).send({ message: `No se permite marcar salida después de las ${horaFinPermitida.format('HH:mm')}` });
         }
     } catch (err) {
         console.error("Error en la consulta del registro:", err.message);
         res.status(500).send({ error: err.message });
     }
 });
-
 
 app.post('/horarios', async (req, res) => {
     const { idEmpleado, horarios } = req.body;
