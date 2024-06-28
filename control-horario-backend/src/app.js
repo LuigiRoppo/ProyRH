@@ -77,11 +77,31 @@ client.connect(err => {
 const verificarYActualizarRegistrosPendientes = async () => {
     try {
         console.log("Iniciando verificación de registros pendientes...");
-        const registros = await client.query('SELECT id_registro, id_empleado, fecha, hora_entrada FROM registros_horarios WHERE hora_salida IS NULL');
-        console.log("Registros pendientes obtenidos:", registros.rows);
 
-        for (const registro of registros.rows) {
-            const { id_registro, id_empleado, fecha, hora_entrada } = registro;
+        // Obtener todos los empleados únicos que tienen registros pendientes
+        const empleados = await client.query(`
+            SELECT DISTINCT id_empleado 
+            FROM registros_horarios 
+            WHERE hora_salida IS NULL
+        `);
+        
+        for (const empleado of empleados.rows) {
+            const id_empleado = empleado.id_empleado;
+            
+            // Obtener el último registro pendiente de cada empleado
+            const result = await client.query(`
+                SELECT id_registro, id_empleado, fecha, hora_entrada 
+                FROM registros_horarios 
+                WHERE id_empleado = $1
+                AND hora_salida IS NULL
+                ORDER BY id_registro DESC
+                LIMIT 1
+            `, [id_empleado]);
+            
+            const registro = result.rows[0];
+            if (!registro) continue;
+
+            const { id_registro, fecha, hora_entrada } = registro;
             const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
             const diaSemana = new Date(fecha).getDay();
             const diaNombreOriginal = diaIndices[diaSemana];
@@ -94,15 +114,16 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 const ahora = moment().tz('Europe/Madrid');
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
-                const fechaHoraFin = `${fecha}T${horarios.rows[0].hora_fin}`;
-                const horaFinMoment = moment(fechaHoraFin).tz('Europe/Madrid').add(5, 'minutes');
-                console.log("Hora fin permitida después de agregar 5 minutos:", horaFinMoment.format('YYYY-MM-DD HH:mm:ss'));
+                // Usar la fecha del registro para crear la hora fin permitida
+                const fechaHoraFin = moment(`${fecha}T${horarios.rows[0].hora_fin}`).tz('Europe/Madrid');
+                const horaFinPermitida = fechaHoraFin.add(5, 'minutes');
+                console.log("Hora fin permitida después de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
-                const comparacion = ahora.isAfter(horaFinMoment);
-                console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinMoment.format('YYYY-MM-DD HH:mm:ss')}): ${comparacion}`);
+                const comparacion = ahora.isAfter(horaFinPermitida);
+                console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}): ${comparacion}`);
 
                 if (comparacion) {
-                    const horaSalida = moment(horaFinMoment).add(1, 'minutes').format('HH:mm:ss');
+                    const horaSalida = moment(fechaHoraFin).add(1, 'minutes').format('HH:mm:ss');
                     const horasTrabajadas = calcularHorasTrabajadas(hora_entrada, horaSalida);
                     await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
                     console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
@@ -120,7 +141,6 @@ const verificarYActualizarRegistrosPendientes = async () => {
 
 // Ejecutar la función cada 5 minutos para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
-
 
 
 
@@ -152,7 +172,8 @@ app.get('/empleados/:id_empleado', async (req, res) => {
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
     const idEmpleado = req.params.id_empleado;
     const sql = `
-        SELECT * FROM registros_horarios
+        SELECT id_registro, id_empleado, fecha, hora_entrada 
+        FROM registros_horarios 
         WHERE id_empleado = $1
         AND hora_salida IS NULL
         ORDER BY id_registro DESC
@@ -164,6 +185,16 @@ app.get('/ultimo-registro/:id_empleado', async (req, res) => {
         res.json(result.rows[0]);
     } catch (err) {
         res.status(400).json({ error: err.message });
+    }
+});
+app.get('/registros/:id_empleado/:id_registro', async (req, res) => {
+    const { id_registro } = req.params;
+
+    try {
+        const result = await client.query('SELECT * FROM registros_horarios WHERE id_registro = $1', [id_registro]);
+        res.send(result.rows[0]);
+    } catch (err) {
+        res.status(500).send({ error: err.message });
     }
 });
 app.get('/registros/:id_empleado', async (req, res) => {
