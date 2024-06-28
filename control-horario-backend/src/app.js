@@ -59,7 +59,6 @@ client.connect(err => {
     }
   });
 
-
   const calcularHorasTrabajadas = (horaEntrada, horaSalida) => {
     const entrada = moment(horaEntrada, 'HH:mm:ss').tz('Europe/Madrid');
     const salida = moment(horaSalida, 'HH:mm:ss').tz('Europe/Madrid');
@@ -75,6 +74,7 @@ client.connect(err => {
     return horas;
 };
 
+// Función para verificar y actualizar registros pendientes
 const verificarYActualizarRegistrosPendientes = async () => {
     try {
         console.log("Iniciando verificación de registros pendientes...");
@@ -98,15 +98,15 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 // Encuentra la hora de fin más cercana después de la hora de entrada
                 const horaFinPermitida = horarios.rows
                     .map(h => {
-                        const horaFin = moment(`${fecha.toISOString().split('T')[0]}T${h.hora_fin}`).tz('Europe/Madrid');
-                        if (horaFin.isBefore(moment(`${fecha.toISOString().split('T')[0]}T${hora_entrada}`).tz('Europe/Madrid'))) {
+                        const horaFin = moment(`${ahora.format('YYYY-MM-DD')}T${h.hora_fin}`).tz('Europe/Madrid');
+                        if (horaFin.isBefore(moment(`${ahora.format('YYYY-MM-DD')}T${hora_entrada}`).tz('Europe/Madrid'))) {
                             horaFin.add(1, 'day'); // Maneja cruces de medianoche
                         }
                         return horaFin;
                     })
                     .reduce((earliest, current) => {
                         return current.isBefore(earliest) ? current : earliest;
-                    }, moment(`${fecha.toISOString().split('T')[0]}T23:59:59`).tz('Europe/Madrid'));
+                    }, moment(`${ahora.format('YYYY-MM-DD')}T23:59:59`).tz('Europe/Madrid'));
 
                 console.log("Hora fin permitida antes de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
                 horaFinPermitida.add(5, 'minutes');
