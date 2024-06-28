@@ -60,7 +60,7 @@ client.connect(err => {
   });
 
 
-const calcularHorasTrabajadas = (horaEntrada, horaSalida) => {
+  const calcularHorasTrabajadas = (horaEntrada, horaSalida) => {
     const entrada = moment(horaEntrada, 'HH:mm:ss').tz('Europe/Madrid');
     const salida = moment(horaSalida, 'HH:mm:ss').tz('Europe/Madrid');
 
@@ -112,10 +112,11 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 horaFinPermitida.add(5, 'minutes');
                 console.log("Hora fin permitida después de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
-                console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}):`, ahora.isAfter(horaFinPermitida));
+                const comparisonResult = ahora.isAfter(horaFinPermitida);
+                console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}):`, comparisonResult);
 
-                if (ahora.isAfter(horaFinPermitida)) {
-                    const horaSalida = ahora.format('HH:mm:ss');
+                if (comparisonResult) {
+                    const horaSalida = ahora.add(1, 'minute').format('HH:mm:ss');
                     const horasTrabajadas = calcularHorasTrabajadas(hora_entrada, horaSalida);
                     
                     if (horasTrabajadas < 0) {
@@ -136,9 +137,8 @@ const verificarYActualizarRegistrosPendientes = async () => {
     }
 };
 
+// Ejecutar la función cada 5 minutos para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
-
-
 
 
 
