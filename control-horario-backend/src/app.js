@@ -88,12 +88,19 @@ app.get('/ultimo-registro/:id_empleado', async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
-
 app.get('/registros/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
 
     try {
         const result = await client.query('SELECT id_registro, id_empleado, TO_CHAR(fecha, \'YYYY-MM-DD\') as fecha, hora_entrada, hora_salida FROM registros_horarios WHERE id_empleado = $1', [id_empleado]);
+        res.send(result.rows);
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+});
+app.get('/horarios', async (req, res) => {
+    try {
+        const result = await client.query('SELECT * FROM horarios');
         res.send(result.rows);
     } catch (err) {
         res.status(500).send({ error: err.message });
@@ -172,6 +179,9 @@ app.get('/empleados/:id_empleado', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+
+
 
 app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada } = req.body;
