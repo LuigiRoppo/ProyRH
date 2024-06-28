@@ -73,6 +73,39 @@ const calcularHorasTrabajadas = (horaEntrada, horaSalida) => {
 
     return horas;
 };
+
+client.connect();
+
+app.get('/ultimo-registro/:id_empleado', async (req, res) => {
+    const idEmpleado = req.params.id_empleado;
+    const sql = `
+        SELECT id_registro, id_empleado, fecha, hora_entrada 
+        FROM registros_horarios 
+        WHERE id_empleado = $1
+        AND hora_salida IS NULL
+        ORDER BY id_registro DESC
+        LIMIT 1
+    `;
+
+    try {
+        const result = await client.query(sql, [idEmpleado]);
+        res.json(result.rows[0]);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+app.get('/registros/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
+
+    try {
+        const result = await client.query('SELECT id_registro, id_empleado, fecha, hora_entrada, hora_salida FROM registros_horarios WHERE id_empleado = $1', [id_empleado]);
+        res.send(result.rows);
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+});
+
 const verificarYActualizarRegistrosPendientes = async () => {
     try {
         console.log("Iniciando verificación de registros pendientes...");
@@ -89,7 +122,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
             
             // Obtener el último registro pendiente de cada empleado
             const result = await client.query(`
-                SELECT id_registro, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, hora_entrada 
+                SELECT id_registro, id_empleado, fecha, hora_entrada 
                 FROM registros_horarios 
                 WHERE id_empleado = $1
                 AND hora_salida IS NULL
@@ -118,7 +151,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 const horaFinPermitida = fechaHoraFin.add(5, 'minutes');
                 console.log("Hora fin permitida después de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
-                const comparacion = ahora.isAfter(horaFinPermitida);
+                const comparacion = ahora > horaFinPermitida;  // Comparación simple de fechas
                 console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}): ${comparacion}`);
 
                 if (comparacion) {
@@ -137,7 +170,10 @@ const verificarYActualizarRegistrosPendientes = async () => {
         console.error("Error en la consulta de registros pendientes:", err.message);
     }
 };
+
+// Ejecutar la función cada 5 minutos para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+
 
 
 
