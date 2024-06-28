@@ -106,6 +106,20 @@ app.get('/horarios', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+app.get('/horario/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
+    console.log(`Obteniendo horario para el empleado con ID: ${id_empleado}`);
+    try {
+        const result = await client.query('SELECT * FROM horarios WHERE id_empleado = $1', [id_empleado]);
+        if (result.rows.length > 0) {
+            res.send(result.rows);
+        } else {
+            res.status(404).send({ message: 'Horario no encontrado para el empleado' });
+        }
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+});
 
 const verificarYActualizarRegistrosPendientes = async () => {
     try {
