@@ -59,7 +59,7 @@ client.connect(err => {
     }
   });
 
-  const calcularHorasTrabajadas = (horaEntrada, horaSalida) => {
+const calcularHorasTrabajadas = (horaEntrada, horaSalida) => {
     const entrada = moment(horaEntrada, 'HH:mm:ss').tz('Europe/Madrid');
     const salida = moment(horaSalida, 'HH:mm:ss').tz('Europe/Madrid');
 
@@ -83,7 +83,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
         for (const registro of registros.rows) {
             const { id_registro, id_empleado, fecha, hora_entrada } = registro;
             const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
-            const diaSemana = new Date(fecha).getDay();  // Usar la fecha del registro
+            const diaSemana = new Date(fecha).getDay();
             const diaNombreOriginal = diaIndices[diaSemana];
             const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
@@ -94,7 +94,6 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 const ahora = moment().tz('Europe/Madrid');
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
-                // Encuentra la hora de fin más cercana después de la hora de entrada
                 const horaFinPermitida = horarios.rows
                     .map(h => {
                         let horaFin = moment(`${fecha.split('T')[0]}T${h.hora_fin}`).tz('Europe/Madrid');
@@ -115,15 +114,14 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}):`, comparisonResult);
 
                 if (comparisonResult) {
-                    const horaSalida = moment(`${fecha.split('T')[0]}T${h.hora_fin}`).tz('Europe/Madrid').add(1, 'minute').format('HH:mm:ss');
+                    const horaSalida = horaFinPermitida.add(1, 'minute').format('HH:mm:ss'); // Ajuste para hora de salida
+                    await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
+                    console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
+
+                    // Calcular horas trabajadas y actualizar en la base de datos
                     const horasTrabajadas = calcularHorasTrabajadas(hora_entrada, horaSalida);
-                    
-                    if (horasTrabajadas < 0) {
-                        console.error(`Horas trabajadas negativas detectadas para el registro ${id_registro}: ${horasTrabajadas}`);
-                    } else {
-                        await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
-                        console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
-                    }
+                    await client.query('UPDATE registros_horarios SET horas_trabajadas = $1 WHERE id_registro = $2', [horasTrabajadas, id_registro]);
+                    console.log(`Horas trabajadas calculadas y actualizadas para el registro ${id_registro}: ${horasTrabajadas}`);
                 } else {
                     console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro}`);
                 }
@@ -136,8 +134,8 @@ const verificarYActualizarRegistrosPendientes = async () => {
     }
 };
 
-// Ejecutar la función cada 5 minutos para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+
 
 
 
