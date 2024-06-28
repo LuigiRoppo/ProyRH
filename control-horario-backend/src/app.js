@@ -79,7 +79,7 @@ client.connect();
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
     const idEmpleado = req.params.id_empleado;
     const sql = `
-        SELECT id_registro, id_empleado, fecha, hora_entrada 
+        SELECT id_registro, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, hora_entrada 
         FROM registros_horarios 
         WHERE id_empleado = $1
         AND hora_salida IS NULL
@@ -99,7 +99,7 @@ app.get('/registros/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
 
     try {
-        const result = await client.query('SELECT id_registro, id_empleado, fecha, hora_entrada, hora_salida FROM registros_horarios WHERE id_empleado = $1', [id_empleado]);
+        const result = await client.query('SELECT id_registro, id_empleado, TO_CHAR(fecha, \'YYYY-MM-DD\') as fecha, hora_entrada, hora_salida FROM registros_horarios WHERE id_empleado = $1', [id_empleado]);
         res.send(result.rows);
     } catch (err) {
         res.status(500).send({ error: err.message });
@@ -122,7 +122,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
             
             // Obtener el último registro pendiente de cada empleado
             const result = await client.query(`
-                SELECT id_registro, id_empleado, fecha, hora_entrada 
+                SELECT id_registro, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, hora_entrada 
                 FROM registros_horarios 
                 WHERE id_empleado = $1
                 AND hora_salida IS NULL
@@ -134,7 +134,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
             if (!registro) continue;
 
             const { id_registro, fecha, hora_entrada } = registro;
-            const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+            const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
             const diaSemana = new Date(fecha).getDay();
             const diaNombreOriginal = diaIndices[diaSemana];
             const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -148,10 +148,10 @@ const verificarYActualizarRegistrosPendientes = async () => {
 
                 // Usar la fecha del registro para crear la hora fin permitida
                 const fechaHoraFin = moment.tz(`${fecha}T${horarios.rows[0].hora_fin}`, 'Europe/Madrid');
-                const horaFinPermitida = fechaHoraFin.add(5, 'minutes');
-                console.log("Hora fin permitida después de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
+                const horaFinPermitida = fechaHoraFin.add(30, 'minutes');
+                console.log("Hora fin permitida después de agregar 30 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
-                const comparacion = ahora > horaFinPermitida;  // Comparación simple de fechas
+                const comparacion = ahora.isAfter(horaFinPermitida);  // Comparación simple de fechas
                 console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}): ${comparacion}`);
 
                 if (comparacion) {
@@ -174,12 +174,6 @@ const verificarYActualizarRegistrosPendientes = async () => {
 // Ejecutar la función cada 5 minutos para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
 
-
-
-
-
-
-
 app.get('/empleados', async (req, res) => {
     try {
         const result = await client.query('SELECT * FROM empleados');
@@ -189,6 +183,7 @@ app.get('/empleados', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
 app.get('/empleados/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
     try {
@@ -203,58 +198,6 @@ app.get('/empleados/:id_empleado', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-app.get('/ultimo-registro/:id_empleado', async (req, res) => {
-    const idEmpleado = req.params.id_empleado;
-    const sql = `
-        SELECT id_registro, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, hora_entrada 
-        FROM registros_horarios 
-        WHERE id_empleado = $1
-        AND hora_salida IS NULL
-        ORDER BY id_registro DESC
-        LIMIT 1
-    `;
-
-    try {
-        const result = await client.query(sql, [idEmpleado]);
-        res.json(result.rows[0]);
-    } catch (err) {
-        res.status(400).json({ error: err.message });
-    }
-});
-app.get('/registros/:id_empleado', async (req, res) => {
-    const { id_empleado } = req.params;
-
-    try {
-        const result = await client.query('SELECT id_registro, id_empleado, TO_CHAR(fecha, \'YYYY-MM-DD\') as fecha, hora_entrada, hora_salida FROM registros_horarios WHERE id_empleado = $1', [id_empleado]);
-        res.send(result.rows);
-    } catch (err) {
-        res.status(500).send({ error: err.message });
-    }
-});
-app.get('/horario/:id_empleado', async (req, res) => {
-    const { id_empleado } = req.params;
-    console.log(`Obteniendo horario para el empleado con ID: ${id_empleado}`);
-    try {
-        const result = await client.query('SELECT * FROM horarios WHERE id_empleado = $1', [id_empleado]);
-        if (result.rows.length > 0) {
-            res.send(result.rows);
-        } else {
-            res.status(404).send({ message: 'Horario no encontrado para el empleado' });
-        }
-    } catch (err) {
-        res.status(500).send({ error: err.message });
-    }
-});
-app.get('/horarios', async (req, res) => {
-    try {
-        const result = await client.query("SELECT * FROM horarios");
-        res.send(result.rows);
-    } catch (err) {
-        res.status(500).send({ error: err.message });
-    }
-});
-
-
 
 app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada } = req.body;
@@ -302,8 +245,9 @@ app.post('/marcar-entrada', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 app.post('/marcar-salida', async (req, res) => {
-    const { id_empleado } = req.body;  // Cambiado a id_empleado para recibir el id_empleado del empleado
+    const { id_empleado } = req.body;
 
     console.log(`Intentando marcar salida para el empleado con ID: ${id_empleado}`);
 
@@ -325,7 +269,7 @@ app.post('/marcar-salida', async (req, res) => {
 
         const { id_registro, fecha } = registro.rows[0];
         const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
-        const diaSemana = new Date().getDay();  // Usar la fecha actual
+        const diaSemana = new Date().getDay();
         const diaNombre = diaIndices[diaSemana];
 
         const horario = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
@@ -340,19 +284,20 @@ app.post('/marcar-salida', async (req, res) => {
         const ahora = moment().tz('Europe/Madrid');
         const horaFinPermitida = horario.rows[0].hora_fin === "00:00"
             ? moment(`${ahora.format('YYYY-MM-DD')}T23:59:59`).add(1, 'minutes').tz('Europe/Madrid')
-            : moment(`${ahora.format('YYYY-MM-DD')}T${horario.rows[0].hora_fin}`).tz('Europe/Madrid').add(1, 'minutes');
+            : moment(`${fecha}T${horario.rows[0].hora_fin}`).tz('Europe/Madrid').add(30, 'minutes');
 
         console.log(`Hora fin permitida: ${horaFinPermitida.format('HH:mm:ss')}`);
         console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
 
-        if (ahora.isSameOrBefore(horaFinPermitida)) {
-            const horaSalida = ahora.format('HH:mm:ss');
+        if (ahora.isAfter(horaFinPermitida)) {
+            const horaSalida = moment(fechaHoraFin).add(1, 'minutes').format('HH:mm:ss');
             console.log(`Marcando salida con hora: ${horaSalida}`);
-            await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
+            const horasTrabajadas = calcularHorasTrabajadas(hora_entrada, horaSalida);
+            await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
             res.send({ message: 'Salida marcada con éxito' });
         } else {
-            console.log(`No se permite marcar salida después de las ${horaFinPermitida.format('HH:mm')}`);
-            res.status(403).send({ message: `No se permite marcar salida después de las ${horaFinPermitida.format('HH:mm')}` });
+            console.log(`No se permite marcar salida antes de las ${horaFinPermitida.format('HH:mm')}`);
+            res.status(403).send({ message: `No se permite marcar salida antes de las ${horaFinPermitida.format('HH:mm')}` });
         }
     } catch (err) {
         console.error("Error en la consulta del registro:", err.message);
@@ -374,6 +319,7 @@ app.post('/horarios', async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
+
 app.post('/empleados', async (req, res) => {
     const { nombre, ubicacion } = req.body;
 
@@ -385,6 +331,7 @@ app.post('/empleados', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 app.put('/horarios/:id_horario', async (req, res) => {
     const { id_horario } = req.params;
     const { dia_semana, hora_inicio, hora_fin } = req.body;
@@ -402,6 +349,7 @@ app.put('/horarios/:id_horario', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 app.delete('/horarios/:id_horario', async (req, res) => {
     const { id_horario } = req.params;
     const sql = 'DELETE FROM horarios WHERE id_horario = $1';
@@ -413,6 +361,7 @@ app.delete('/horarios/:id_horario', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 app.delete('/empleados/:id_empleado', async (req, res) => {
     const id_empleado = req.params.id_empleado;
 
@@ -432,10 +381,6 @@ app.delete('/empleados/:id_empleado', async (req, res) => {
         res.status(500).json({ error: 'Error al eliminar empleado', details: err.message });
     }
 });
-
-
-
-
 
 async function generateUniqueId() {
     let id_empleado;
