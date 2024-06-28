@@ -94,17 +94,15 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 const ahora = moment().tz('Europe/Madrid');
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
-                const horaFinPermitida = horarios.rows[0].hora_fin === "00:00"
-                    ? moment(`${fecha}T23:59:59`).tz('Europe/Madrid').add(5, 'minutes')
-                    : moment(`${fecha}T${horarios.rows[0].hora_fin}`).tz('Europe/Madrid').add(5, 'minutes');
+                const fechaHoraFin = `${fecha}T${horarios.rows[0].hora_fin}`;
+                const horaFinMoment = moment(fechaHoraFin).tz('Europe/Madrid').add(5, 'minutes');
+                console.log("Hora fin permitida después de agregar 5 minutos:", horaFinMoment.format('YYYY-MM-DD HH:mm:ss'));
 
-                console.log("Hora fin permitida antes de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
-
-                const comparacion = ahora.isAfter(horaFinPermitida);
-                console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}): ${comparacion}`);
+                const comparacion = ahora.isAfter(horaFinMoment);
+                console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinMoment.format('YYYY-MM-DD HH:mm:ss')}): ${comparacion}`);
 
                 if (comparacion) {
-                    const horaSalida = moment(horaFinPermitida).add(5, 'minutes').format('HH:mm:ss');
+                    const horaSalida = moment(horaFinMoment).add(1, 'minutes').format('HH:mm:ss');
                     const horasTrabajadas = calcularHorasTrabajadas(hora_entrada, horaSalida);
                     await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
                     console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
