@@ -126,8 +126,8 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
                 const fechaHoraFin = moment.tz(`${fecha}T${horarios.rows[0].hora_fin}`, 'Europe/Madrid');
-                const horaFinPermitida = fechaHoraFin.add(30, 'minutes');
-                console.log("Hora fin permitida después de agregar 30 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
+                const horaFinPermitida = fechaHoraFin.add(5, 'minutes');
+                console.log("Hora fin permitida después de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
                 if (ahora.isAfter(horaFinPermitida)) {
                     const horaSalida = moment(fechaHoraFin).add(1, 'minutes').format('HH:mm:ss');
