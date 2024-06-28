@@ -59,7 +59,7 @@ client.connect(err => {
     }
   });
 
-const calcularHorasTrabajadas = (horaEntrada, horaSalida) => {
+  const calcularHorasTrabajadas = (horaEntrada, horaSalida) => {
     const entrada = moment(horaEntrada, 'HH:mm:ss').tz('Europe/Madrid');
     const salida = moment(horaSalida, 'HH:mm:ss').tz('Europe/Madrid');
 
@@ -94,34 +94,20 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 const ahora = moment().tz('Europe/Madrid');
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
-                const horaFinPermitida = horarios.rows
-                    .map(h => {
-                        let horaFin = moment(`${fecha.split('T')[0]}T${h.hora_fin}`).tz('Europe/Madrid');
-                        if (horaFin.isBefore(moment(`${fecha.split('T')[0]}T${hora_entrada}`).tz('Europe/Madrid'))) {
-                            horaFin = horaFin.add(1, 'day'); // Maneja cruces de medianoche
-                        }
-                        return horaFin;
-                    })
-                    .reduce((earliest, current) => {
-                        return current.isBefore(earliest) ? current : earliest;
-                    }, moment(`${fecha.split('T')[0]}T23:59:59`).tz('Europe/Madrid'));
+                const horaFinPermitida = horarios.rows[0].hora_fin === "00:00"
+                    ? moment(`${fecha}T23:59:59`).tz('Europe/Madrid').add(5, 'minutes')
+                    : moment(`${fecha}T${horarios.rows[0].hora_fin}`).tz('Europe/Madrid').add(5, 'minutes');
 
                 console.log("Hora fin permitida antes de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
-                horaFinPermitida.add(5, 'minutes');
-                console.log("Hora fin permitida después de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
-                const comparisonResult = ahora.isAfter(horaFinPermitida);
-                console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}):`, comparisonResult);
+                const comparacion = ahora.isAfter(horaFinPermitida);
+                console.log(`Comparación de ahora (${ahora.format('YYYY-MM-DD HH:mm:ss')}) con hora fin permitida (${horaFinPermitida.format('YYYY-MM-DD HH:mm:ss')}): ${comparacion}`);
 
-                if (comparisonResult) {
-                    const horaSalida = horaFinPermitida.add(1, 'minute').format('HH:mm:ss'); // Ajuste para hora de salida
-                    await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
-                    console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
-
-                    // Calcular horas trabajadas y actualizar en la base de datos
+                if (comparacion) {
+                    const horaSalida = moment(horaFinPermitida).add(5, 'minutes').format('HH:mm:ss');
                     const horasTrabajadas = calcularHorasTrabajadas(hora_entrada, horaSalida);
-                    await client.query('UPDATE registros_horarios SET horas_trabajadas = $1 WHERE id_registro = $2', [horasTrabajadas, id_registro]);
-                    console.log(`Horas trabajadas calculadas y actualizadas para el registro ${id_registro}: ${horasTrabajadas}`);
+                    await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+                    console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
                 } else {
                     console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro}`);
                 }
@@ -134,6 +120,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
     }
 };
 
+// Ejecutar la función cada 5 minutos para pruebas
 setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
 
 
