@@ -56,52 +56,19 @@ client.connect(err => {
     }
 });
 
-const verificarYActualizarRegistrosPendientes = async () => {
-    try {
-        console.log("Iniciando verificación de registros pendientes...");
+const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSalida) => {
+    const entrada = moment.tz(`${fechaEntrada}T${horaEntrada}`, 'Europe/Madrid');
+    const salida = moment.tz(`${fechaSalida}T${horaSalida}`, 'Europe/Madrid');
 
-        const registros = await client.query(`
-            SELECT id_registro, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, hora_entrada 
-            FROM registros_horarios 
-            WHERE hora_salida IS NULL
-        `);
-        console.log("Registros pendientes obtenidos:", registros.rows);
-
-        for (const registro of registros.rows) {
-            const { id_registro, id_empleado, fecha, hora_entrada } = registro;
-            const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
-            const diaSemana = new Date(fecha).getDay();
-            const diaNombreOriginal = diaIndices[diaSemana];
-            const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
-            const horarios = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
-            console.log(`Horarios obtenidos para empleado ${id_empleado} en día ${diaNombre}:`, horarios.rows);
-
-            if (horarios.rows.length > 0) {
-                const ahora = moment().tz('Europe/Madrid');
-                console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
-
-                const fechaHoraFin = moment.tz(`${fecha}T${horarios.rows[0].hora_fin}`, 'Europe/Madrid');
-                const horaFinPermitida = fechaHoraFin.add(5, 'minutes');
-                console.log("Hora fin permitida después de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
-
-                if (ahora.isAfter(horaFinPermitida)) {
-                    const horaSalida = moment(fechaHoraFin).add(1, 'minutes').format('HH:mm:ss');
-                    await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
-                    console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
-                } else {
-                    console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro}`);
-                }
-            } else {
-                console.log(`No se encontraron horarios para el empleado ${id_empleado} en el día ${diaNombre}`);
-            }
-        }
-    } catch (err) {
-        console.error("Error en la consulta de registros pendientes:", err.message);
+    if (salida.isBefore(entrada)) {
+        salida.add(1, 'day');
     }
-};
 
-setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+    const duracion = moment.duration(salida.diff(entrada));
+    const horas = duracion.asHours();
+
+    return horas;
+};
 
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
     const idEmpleado = req.params.id_empleado;
@@ -157,6 +124,54 @@ app.get('/horario/:id_empleado', async (req, res) => {
     }
 });
 
+const verificarYActualizarRegistrosPendientes = async () => {
+    try {
+        console.log("Iniciando verificación de registros pendientes...");
+
+        const registros = await client.query(`
+            SELECT id_registro, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, hora_entrada 
+            FROM registros_horarios 
+            WHERE hora_salida IS NULL
+        `);
+        console.log("Registros pendientes obtenidos:", registros.rows);
+
+        for (const registro of registros.rows) {
+            const { id_registro, id_empleado, fecha, hora_entrada } = registro;
+            const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+            const diaSemana = new Date(fecha).getDay();
+            const diaNombreOriginal = diaIndices[diaSemana];
+            const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+            const horarios = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
+            console.log(`Horarios obtenidos para empleado ${id_empleado} en día ${diaNombre}:`, horarios.rows);
+
+            if (horarios.rows.length > 0) {
+                const ahora = moment().tz('Europe/Madrid');
+                console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
+
+                const fechaHoraFin = moment.tz(`${fecha}T${horarios.rows[0].hora_fin}`, 'Europe/Madrid');
+                const horaFinPermitida = fechaHoraFin.add(5, 'minutes');
+                console.log("Hora fin permitida después de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
+
+                if (ahora.isAfter(horaFinPermitida)) {
+                    const horaSalida = moment(fechaHoraFin).add(1, 'minutes').format('HH:mm:ss');
+                    const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
+                    await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+                    console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
+                } else {
+                    console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro}`);
+                }
+            } else {
+                console.log(`No se encontraron horarios para el empleado ${id_empleado} en el día ${diaNombre}`);
+            }
+        }
+    } catch (err) {
+        console.error("Error en la consulta de registros pendientes:", err.message);
+    }
+};
+
+setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+
 app.get('/empleados', async (req, res) => {
     try {
         const result = await client.query('SELECT * FROM empleados');
@@ -186,7 +201,7 @@ app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada } = req.body;
     console.log(`Datos recibidos para marcar entrada: ${JSON.stringify(req.body)}`);
 
-    const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+    const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
     const diaSemana = new Date(fecha).getDay();
     const diaNombre = diaIndices[diaSemana];
 
@@ -250,7 +265,7 @@ app.post('/marcar-salida', async (req, res) => {
         console.log(`Registro encontrado: ${JSON.stringify(registro.rows[0])}`);
 
         const { id_registro, fecha, hora_entrada } = registro.rows[0];
-        const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+        const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
         const diaSemana = new Date(fecha).getDay();
         const diaNombre = diaIndices[diaSemana];
 
@@ -271,7 +286,8 @@ app.post('/marcar-salida', async (req, res) => {
 
         if (ahora.isSameOrBefore(horaFinPermitida)) {
             const horaSalida = ahora.format('HH:mm:ss');
-            await client.query('UPDATE registros_horarios SET hora_salida = $1 WHERE id_registro = $2', [horaSalida, id_registro]);
+            const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
+            await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
             res.send({ message: 'Salida marcada con éxito' });
         } else {
             console.log(`No se permite marcar salida después de las ${horaFinPermitida.format('HH:mm')}`);
