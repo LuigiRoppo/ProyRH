@@ -32,7 +32,7 @@ const EmployeeRecords = () => {
                         <th>Fecha</th>
                         <th>Hora Entrada</th>
                         <th>Hora Salida</th>
-                        <th>Horas Trabajadas</th>
+                        {/* <th>Horas Trabajadas</th> */}
                     </tr>
                 </thead>
                 <tbody>
@@ -42,7 +42,7 @@ const EmployeeRecords = () => {
                             <td>{registro.fecha}</td>
                             <td>{registro.hora_entrada}</td>
                             <td>{registro.hora_salida}</td>
-                            <td>{registro.horas_trabajadas ? registro.horas_trabajadas.toFixed(2) : 'N/A'}</td>
+                            {/* <td>{registro.horas_trabajadas ? registro.horas_trabajadas.toFixed(2) : 'N/A'}</td> */}
                         </tr>
                     ))}
                 </tbody>
