@@ -67,7 +67,7 @@ const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSal
     const duracion = moment.duration(salida.diff(entrada));
     const horas = duracion.asHours();
 
-    return horas.toFixed(2);
+    return horas.toFixed(2); // Limit to two decimal places
 };
 
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
@@ -184,7 +184,6 @@ app.get('/empleados', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-
 app.get('/empleados/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
     try {
@@ -199,7 +198,6 @@ app.get('/empleados/:id_empleado', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-
 app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada } = req.body;
     console.log(`Datos recibidos para marcar entrada: ${JSON.stringify(req.body)}`);
@@ -246,7 +244,6 @@ app.post('/marcar-entrada', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
 app.post('/marcar-salida', async (req, res) => {
     const { id_empleado } = req.body;
     console.log(`Intentando marcar salida para el empleado con ID: ${id_empleado}`);
@@ -278,9 +275,6 @@ app.post('/marcar-salida', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
-
-
 app.post('/horarios', async (req, res) => {
     const { idEmpleado, horarios } = req.body;
     const sql = 'INSERT INTO horarios (id_empleado, dia_semana, hora_inicio, hora_fin) VALUES ($1, $2, $3, $4)';
@@ -294,7 +288,6 @@ app.post('/horarios', async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
-
 app.post('/empleados', async (req, res) => {
     const { nombre, ubicacion } = req.body;
 
@@ -306,7 +299,6 @@ app.post('/empleados', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
 app.put('/horarios/:id_horario', async (req, res) => {
     const { id_horario } = req.params;
     const { dia_semana, hora_inicio, hora_fin } = req.body;
@@ -324,7 +316,6 @@ app.put('/horarios/:id_horario', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
 app.delete('/horarios/:id_horario', async (req, res) => {
     const { id_horario } = req.params;
     const sql = 'DELETE FROM horarios WHERE id_horario = $1';
@@ -336,7 +327,6 @@ app.delete('/horarios/:id_horario', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
 app.delete('/empleados/:id_empleado', async (req, res) => {
     const id_empleado = req.params.id_empleado;
 

@@ -9,14 +9,13 @@ const EmployeeRecords = () => {
     const [registros, setRegistros] = useState([]);
 
     useEffect(() => {
-        const end = moment().format('YYYY-MM-DD');
-        const start = moment().subtract(1, 'month').format('YYYY-MM-DD'); // Cambia 'month' a 'week' para una semana
-        fetchRegistros(start, end);
-    }, []);
+        fetchRegistros();
+    }, [id_empleado]);
 
-    const fetchRegistros = async (start, end) => {
+    const fetchRegistros = async () => {
         try {
-            const registrosData = await getRegistrosByEmpleadoId(id_empleado, start, end);
+            const registrosData = await getRegistrosByEmpleadoId(id_empleado);
+            console.log('Registros obtenidos:', registrosData);
             setRegistros(registrosData);
         } catch (error) {
             console.error('Error al cargar registros:', error);
@@ -43,7 +42,7 @@ const EmployeeRecords = () => {
                             <td>{registro.fecha}</td>
                             <td>{registro.hora_entrada}</td>
                             <td>{registro.hora_salida}</td>
-                            <td>{registro.horas_trabajadas}</td>
+                            <td>{registro.horas_trabajadas ? registro.horas_trabajadas.toFixed(2) : 'N/A'}</td>
                         </tr>
                     ))}
                 </tbody>
