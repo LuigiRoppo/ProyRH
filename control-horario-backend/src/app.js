@@ -57,27 +57,23 @@ client.connect(err => {
 });
 
 const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSalida) => {
-    try {
-        const entrada = moment.tz(`${fechaEntrada}T${horaEntrada}`, 'Europe/Madrid');
-        const salida = moment.tz(`${fechaSalida}T${horaSalida}`, 'Europe/Madrid');
+    const entrada = moment.tz(`${fechaEntrada}T${horaEntrada}`, 'Europe/Madrid');
+    const salida = moment.tz(`${fechaSalida}T${horaSalida}`, 'Europe/Madrid');
 
-        if (!entrada.isValid() || !salida.isValid()) {
-            throw new Error('Invalid date or time format');
-        }
-
-        // Manejar cruces de medianoche
-        if (salida.isBefore(entrada)) {
-            salida.add(1, 'day');
-        }
-
-        const duracion = moment.duration(salida.diff(entrada));
-        const horas = duracion.asHours();
-
-        return parseFloat(horas.toFixed(2));  // Limitar a 2 decimales
-    } catch (error) {
-        console.error(`Error en calcularHorasTrabajadas: ${error.message}`);
+    if (!entrada.isValid() || !salida.isValid()) {
+        console.error('Fechas de entrada o salida no válidas');
         return NaN;
     }
+
+    // Manejar cruces de medianoche
+    if (salida.isBefore(entrada)) {
+        salida.add(1, 'day');
+    }
+
+    const duracion = moment.duration(salida.diff(entrada));
+    const horas = duracion.asHours();
+
+    return parseFloat(horas.toFixed(2));  // Limitar a 2 decimales
 };
 
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
@@ -169,12 +165,8 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 if (ahora.isAfter(horaFinPermitida)) {
                     const horaSalida = moment(fechaHoraFin).add(1, 'minutes').format('HH:mm:ss');
                     const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
-                    if (!isNaN(horasTrabajadas)) {
-                        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
-                        console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
-                    } else {
-                        console.log(`Error en el cálculo de horas trabajadas: ${horasTrabajadas}`);
-                    }
+                    await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+                    console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
                 } else {
                     console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro}`);
                 }
@@ -307,13 +299,8 @@ app.post('/marcar-salida', async (req, res) => {
         const horaSalida = ahora.format('HH:mm:ss');
         const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
 
-        if (!isNaN(horasTrabajadas)) {
-            await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
-            res.send({ message: 'Salida marcada con éxito' });
-        } else {
-            console.log(`Error en el cálculo de horas trabajadas: ${horasTrabajadas}`);
-            res.status(500).send({ message: 'Error en el cálculo de horas trabajadas' });
-        }
+        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+        res.send({ message: 'Salida marcada con éxito' });
     } catch (err) {
         console.error("Error en la consulta del registro:", err.message);
         res.status(500).send({ error: err.message });
