@@ -57,21 +57,24 @@ client.connect(err => {
 });
 
 const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSalida) => {
-    const entrada = moment.tz(`${fechaEntrada}T${horaEntrada}`, 'Europe/Madrid');
-    const salida = moment.tz(`${fechaSalida}T${horaSalida}`, 'Europe/Madrid');
+    try {
+        const entrada = moment.tz(`${fechaEntrada}T${horaEntrada}`, 'Europe/Madrid');
+        const salida = moment.tz(`${fechaSalida}T${horaSalida}`, 'Europe/Madrid');
 
-    // Manejar cruces de medianoche
-    if (salida.isBefore(entrada)) {
-        salida.add(1, 'day');
+        // Manejar cruces de medianoche
+        if (salida.isBefore(entrada)) {
+            salida.add(1, 'day');
+        }
+
+        const duracion = moment.duration(salida.diff(entrada));
+        const horas = duracion.asHours();
+
+        return parseFloat(horas.toFixed(2));  // Limitar a 2 decimales
+    } catch (error) {
+        console.error(`Error en calcularHorasTrabajadas: ${error.message}`);
+        return NaN;
     }
-
-    const duracion = moment.duration(salida.diff(entrada));
-    const horas = duracion.asHours();
-
-    return parseFloat(horas.toFixed(2));  // Limitar a 2 decimales
 };
-
-
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
     const idEmpleado = req.params.id_empleado;
     const sql = `
@@ -162,8 +165,13 @@ const verificarYActualizarRegistrosPendientes = async () => {
                     const horaSalida = moment(fechaHoraFin).add(1, 'minutes').format('HH:mm:ss');
                     const fechaSalida = ahora.format('YYYY-MM-DD');
                     const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, fechaSalida, horaSalida);
-                    await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
-                    console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
+
+                    if (!isNaN(horasTrabajadas)) {
+                        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+                        console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
+                    } else {
+                        console.log(`Error en el cálculo de horas trabajadas: ${horasTrabajadas}`);
+                    }
                 } else {
                     console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro}`);
                 }
@@ -177,6 +185,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
 };
 
 setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+
 
 app.get('/empleados', async (req, res) => {
     try {
@@ -271,10 +280,16 @@ app.post('/marcar-salida', async (req, res) => {
         const ahora = moment().tz('Europe/Madrid');
         const horaSalida = ahora.format('HH:mm:ss');
         const fechaSalida = ahora.format('YYYY-MM-DD');
+
         const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, fechaSalida, horaSalida);
 
-        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
-        res.send({ message: 'Salida marcada con éxito' });
+        if (!isNaN(horasTrabajadas)) {
+            await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+            res.send({ message: 'Salida marcada con éxito' });
+        } else {
+            console.log(`Error en el cálculo de horas trabajadas: ${horasTrabajadas}`);
+            res.status(500).send({ message: 'Error en el cálculo de horas trabajadas' });
+        }
     } catch (err) {
         console.error("Error en la consulta del registro:", err.message);
         res.status(500).send({ error: err.message });
