@@ -67,7 +67,7 @@ const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSal
     const duracion = moment.duration(salida.diff(entrada));
     const horas = duracion.asHours();
 
-    return horas;
+    return horas.toFixed(2);
 };
 
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
@@ -149,7 +149,10 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 const ahora = moment().tz('Europe/Madrid');
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
-                const fechaHoraFin = moment.tz(`${fecha}T${horarios.rows[0].hora_fin}`, 'Europe/Madrid');
+                let fechaHoraFin = moment.tz(`${fecha}T${horarios.rows[0].hora_fin}`, 'Europe/Madrid');
+                if (horarios.rows[0].hora_fin === '00:00') {
+                    fechaHoraFin = fechaHoraFin.add(1, 'day');  // Add one day for midnight case
+                }
                 const horaFinPermitida = fechaHoraFin.add(5, 'minutes');
                 console.log("Hora fin permitida después de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
@@ -278,8 +281,11 @@ app.post('/marcar-salida', async (req, res) => {
         console.log(`Horario encontrado: ${JSON.stringify(horarios.rows[0])}`);
 
         const ahora = moment().tz('Europe/Madrid');
-        const fechaHoraFin = moment.tz(`${fecha}T${horarios.rows[0].hora_fin}`, 'Europe/Madrid');
-        const horaFinPermitida = fechaHoraFin.add(30, 'minutes');
+        let fechaHoraFin = moment.tz(`${fecha}T${horarios.rows[0].hora_fin}`, 'Europe/Madrid');
+        if (horarios.rows[0].hora_fin === '00:00') {
+            fechaHoraFin = fechaHoraFin.add(1, 'day');  // Add one day for midnight case
+        }
+        const horaFinPermitida = fechaHoraFin.add(5, 'minutes');
 
         console.log(`Hora fin permitida: ${horaFinPermitida.format('HH:mm:ss')}`);
         console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
