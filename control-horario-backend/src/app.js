@@ -53,9 +53,6 @@ client.connect(err => {
     }
 });
 const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSalida) => {
-    if (!fechaEntrada || !horaEntrada || !fechaSalida || !horaSalida) {
-        return NaN; // Devuelve NaN si falta algún valor
-    }
     const entrada = moment.tz(`${fechaEntrada}T${horaEntrada}`, 'Europe/Madrid');
     const salida = moment.tz(`${fechaSalida}T${horaSalida}`, 'Europe/Madrid');
 
@@ -69,6 +66,7 @@ const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSal
 
     return parseFloat(horas.toFixed(2));  // Limitar a 2 decimales
 };
+
 
 
 
@@ -247,6 +245,7 @@ app.post('/marcar-entrada', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 app.post('/marcar-salida', async (req, res) => {
     const { id_empleado } = req.body;
     console.log(`Intentando marcar salida para el empleado con ID: ${id_empleado}`);
@@ -272,8 +271,13 @@ app.post('/marcar-salida', async (req, res) => {
         const fechaSalida = ahora.format('YYYY-MM-DD');
         const horaSalida = ahora.format('HH:mm:ss');
         
+        console.log(`Fecha de entrada: ${fecha}, Hora de entrada: ${hora_entrada}`);
+        console.log(`Fecha de salida: ${fechaSalida}, Hora de salida: ${horaSalida}`);
+
         // Calcular horas trabajadas
         const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, fechaSalida, horaSalida);
+
+        console.log(`Horas trabajadas calculadas: ${horasTrabajadas}`);
 
         // Validar que horasTrabajadas no sea NaN
         if (isNaN(horasTrabajadas)) {
@@ -289,6 +293,7 @@ app.post('/marcar-salida', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 
 
 app.post('/horarios', async (req, res) => {
