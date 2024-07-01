@@ -82,6 +82,8 @@ const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSal
 
 
 
+
+
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
     const idEmpleado = req.params.id_empleado;
     const sql = `
@@ -122,23 +124,45 @@ app.get('/horarios', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-app.get('/registros/:id_empleado', async (req, res) => {
+app.get('/horario/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
-    const { startDate, endDate } = req.query;
-
+    console.log(`Obteniendo horario para el empleado con ID: ${id_empleado}`);
     try {
-        console.log(`Obteniendo registros para el empleado ${id_empleado} entre ${startDate} y ${endDate}`);
-        const result = await client.query(
-            'SELECT id_registro, id_empleado, TO_CHAR(fecha, \'YYYY-MM-DD\') as fecha, hora_entrada, hora_salida FROM registros_horarios WHERE id_empleado = $1 AND fecha BETWEEN $2 AND $3 ORDER BY fecha DESC',
-            [id_empleado, startDate, endDate]
-        );
-        console.log('Registros obtenidos:', result.rows);
-        res.send(result.rows);
+        const result = await client.query('SELECT * FROM horarios WHERE id_empleado = $1', [id_empleado]);
+        if (result.rows.length > 0) {
+            res.send(result.rows);
+        } else {
+            res.status(404).send({ message: 'Horario no encontrado para el empleado' });
+        }
     } catch (err) {
-        console.error('Error al obtener registros:', err.message);
         res.status(500).send({ error: err.message });
     }
 });
+app.get('/empleados', async (req, res) => {
+    try {
+        const result = await client.query('SELECT * FROM empleados');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Error fetching empleados:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+app.get('/empleados/:id_empleado', async (req, res) => {
+    const { id_empleado } = req.params;
+    try {
+        const result = await client.query('SELECT * FROM empleados WHERE id_empleado = $1', [id_empleado]);
+        if (result.rows.length > 0) {
+            res.json(result.rows[0]);
+        } else {
+            res.status(404).json({ message: 'Empleado no encontrado' });
+        }
+    } catch (error) {
+        console.error('Error fetching empleado:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+
 const verificarYActualizarRegistrosPendientes = async () => {
     try {
         console.log("Iniciando verificación de registros pendientes...");
@@ -190,29 +214,10 @@ const verificarYActualizarRegistrosPendientes = async () => {
 
 setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
 
-app.get('/empleados', async (req, res) => {
-    try {
-        const result = await client.query('SELECT * FROM empleados');
-        res.json(result.rows);
-    } catch (error) {
-        console.error('Error fetching empleados:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-app.get('/empleados/:id_empleado', async (req, res) => {
-    const { id_empleado } = req.params;
-    try {
-        const result = await client.query('SELECT * FROM empleados WHERE id_empleado = $1', [id_empleado]);
-        if (result.rows.length > 0) {
-            res.json(result.rows[0]);
-        } else {
-            res.status(404).json({ message: 'Empleado no encontrado' });
-        }
-    } catch (error) {
-        console.error('Error fetching empleado:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
+
+
+
+
 app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada } = req.body;
     console.log(`Datos recibidos para marcar entrada: ${JSON.stringify(req.body)}`);
@@ -298,6 +303,8 @@ app.post('/marcar-salida', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
+
 
 
 
