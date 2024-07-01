@@ -96,13 +96,13 @@ export const getUltimoRegistroByEmpleadoId = async (idEmpleado) => {
 };
 export const getRegistrosByEmpleadoId = async (id_empleado, startDate, endDate) => {
     try {
-      const response = await axios.get(`${BASE_URL}/registros/${id_empleado}`, {
-        params: { startDate, endDate }
-      });
-      return response.data;
+        const response = await axios.get(`${BASE_URL}/registros/${id_empleado}`, {
+            params: { startDate, endDate }
+        });
+        return response.data;
     } catch (error) {
-      console.error('Error al obtener registros para el empleado con ID:', id_empleado, error);
-      throw error;
+        console.error('Error al obtener registros para el empleado con ID:', id_empleado, error);
+        throw error;
     }
 };
 export const marcarEntrada = async (registro) => {

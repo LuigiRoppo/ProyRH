@@ -22,6 +22,10 @@ const EmployeeRecords = () => {
         }
     };
 
+    const formatHours = (hours) => {
+        return hours ? hours.toFixed(2) : 'N/A';
+    };
+
     return (
         <div className="records-container">
             <h1>Registros de Empleado {id_empleado}</h1>
@@ -32,7 +36,7 @@ const EmployeeRecords = () => {
                         <th>Fecha</th>
                         <th>Hora Entrada</th>
                         <th>Hora Salida</th>
-                        {/* <th>Horas Trabajadas</th> */}
+                        <th>Horas Trabajadas</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -42,7 +46,7 @@ const EmployeeRecords = () => {
                             <td>{registro.fecha}</td>
                             <td>{registro.hora_entrada}</td>
                             <td>{registro.hora_salida}</td>
-                            {/* <td>{registro.horas_trabajadas ? registro.horas_trabajadas.toFixed(2) : 'N/A'}</td> */}
+                            <td>{formatHours(registro.horas_trabajadas)}</td>
                         </tr>
                     ))}
                 </tbody>

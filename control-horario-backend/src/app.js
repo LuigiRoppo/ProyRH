@@ -64,8 +64,9 @@ const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSal
     const duracion = moment.duration(salida.diff(entrada));
     const horas = duracion.asHours();
 
-    return isNaN(horas) ? 0 : parseFloat(horas.toFixed(2));  // Limitar a 2 decimales y validar NaN
+    return parseFloat(horas.toFixed(2));  // Limitar a 2 decimales
 };
+
 
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
     const idEmpleado = req.params.id_empleado;
@@ -287,19 +288,13 @@ app.post('/marcar-salida', async (req, res) => {
         const horaSalida = ahora.format('HH:mm:ss');
         const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
 
-        if (!isNaN(horasTrabajadas)) {  // Check if horasTrabajadas is a valid number
-            await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
-            res.send({ message: 'Salida marcada con éxito' });
-        } else {
-            console.error("Error en el cálculo de horas trabajadas:", horasTrabajadas);
-            res.status(500).send({ error: 'Error en el cálculo de horas trabajadas' });
-        }
+        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+        res.send({ message: 'Salida marcada con éxito' });
     } catch (err) {
         console.error("Error en la consulta del registro:", err.message);
         res.status(500).send({ error: err.message });
     }
 });
-
 app.post('/horarios', async (req, res) => {
     const { idEmpleado, horarios } = req.body;
     const sql = 'INSERT INTO horarios (id_empleado, dia_semana, hora_inicio, hora_fin) VALUES ($1, $2, $3, $4)';
