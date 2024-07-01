@@ -94,7 +94,7 @@ function WorkLogs({ employeeId }) {
           </tr>
         </thead>
         <tbody>
-          {logs.slice(-5).map((log) => (  // Mostrar solo las últimas 5 jornadas
+          {logs.map((log) => (
             <tr key={log.id_registro}>
               <td>{log.fecha}</td>
               <td>{log.hora_entrada}</td>

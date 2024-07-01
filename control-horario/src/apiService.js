@@ -96,15 +96,18 @@ export const getUltimoRegistroByEmpleadoId = async (idEmpleado) => {
 };
 export const getRegistrosByEmpleadoId = async (id_empleado, startDate, endDate) => {
     try {
+        console.log(`Obteniendo registros para el empleado con ID: ${id_empleado} entre ${startDate} y ${endDate}`);
         const response = await axios.get(`${BASE_URL}/registros/${id_empleado}`, {
             params: { startDate, endDate }
         });
+        console.log('Registros obtenidos:', response.data);
         return response.data;
     } catch (error) {
         console.error('Error al obtener registros para el empleado con ID:', id_empleado, error);
         throw error;
     }
 };
+
 export const marcarEntrada = async (registro) => {
     try {
         console.log('Enviando datos a marcarEntrada:', registro);
@@ -124,6 +127,13 @@ export const marcarSalida = async (registro) => {
         return response.data;
     } catch (error) {
         console.error('Error al marcar salida:', error);
+        if (error.response) {
+            console.error('Respuesta del servidor con error:', error.response.data);
+        } else if (error.request) {
+            console.error('No hubo respuesta del servidor:', error.request);
+        } else {
+            console.error('Error durante la configuración de la solicitud:', error.message);
+        }
         throw error;
     }
 };
