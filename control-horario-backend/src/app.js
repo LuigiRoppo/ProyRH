@@ -27,21 +27,18 @@ app.use(cors({
     methods: 'GET,POST,PUT,DELETE',
     credentials: true
 }));
-
 app.use(express.json());
 app.use(bodyParser.json());
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
-
 const client = new Client({
     connectionString: process.env.DATABASE_URL,
     ssl: {
         rejectUnauthorized: false
     }
 });
-
 client.connect(err => {
     if (err) {
         console.error('Error acquiring client', err.stack);
@@ -55,7 +52,6 @@ client.connect(err => {
         });
     }
 });
-
 const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSalida) => {
     const entrada = moment.tz(`${fechaEntrada}T${horaEntrada}`, 'Europe/Madrid');
     const salida = moment.tz(`${fechaSalida}T${horaSalida}`, 'Europe/Madrid');
@@ -68,7 +64,7 @@ const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSal
     const duracion = moment.duration(salida.diff(entrada));
     const horas = duracion.asHours();
 
-    return parseFloat(horas.toFixed(2));  // Limitar a 2 decimales
+    return isNaN(horas) ? 0 : parseFloat(horas.toFixed(2));  // Limitar a 2 decimales y validar NaN
 };
 
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
@@ -89,18 +85,20 @@ app.get('/ultimo-registro/:id_empleado', async (req, res) => {
         res.status(400).json({ error: err.message });
     }
 });
-
 app.get('/registros/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
-
+    const { startDate, endDate } = req.query;
+  
     try {
-        const result = await client.query('SELECT id_registro, id_empleado, TO_CHAR(fecha, \'YYYY-MM-DD\') as fecha, hora_entrada, hora_salida, horas_trabajadas FROM registros_horarios WHERE id_empleado = $1', [id_empleado]);
-        res.send(result.rows);
+      const result = await client.query(
+        'SELECT id_registro, id_empleado, TO_CHAR(fecha, \'YYYY-MM-DD\') as fecha, hora_entrada, hora_salida FROM registros_horarios WHERE id_empleado = $1 AND fecha BETWEEN $2 AND $3 ORDER BY fecha DESC',
+        [id_empleado, startDate, endDate]
+      );
+      res.send(result.rows);
     } catch (err) {
-        res.status(500).send({ error: err.message });
+      res.status(500).send({ error: err.message });
     }
-});
-
+});  
 app.get('/horarios', async (req, res) => {
     try {
         const result = await client.query('SELECT * FROM horarios');
@@ -109,7 +107,6 @@ app.get('/horarios', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
 app.get('/horario/:id_empleado', async (req, res) => {
     const { id_empleado } = req.params;
     console.log(`Obteniendo horario para el empleado con ID: ${id_empleado}`);
@@ -124,7 +121,6 @@ app.get('/horario/:id_empleado', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
 const verificarYActualizarRegistrosPendientes = async () => {
     try {
         console.log("Iniciando verificación de registros pendientes...");
@@ -291,13 +287,19 @@ app.post('/marcar-salida', async (req, res) => {
         const horaSalida = ahora.format('HH:mm:ss');
         const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
 
-        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
-        res.send({ message: 'Salida marcada con éxito' });
+        if (!isNaN(horasTrabajadas)) {  // Check if horasTrabajadas is a valid number
+            await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+            res.send({ message: 'Salida marcada con éxito' });
+        } else {
+            console.error("Error en el cálculo de horas trabajadas:", horasTrabajadas);
+            res.status(500).send({ error: 'Error en el cálculo de horas trabajadas' });
+        }
     } catch (err) {
         console.error("Error en la consulta del registro:", err.message);
         res.status(500).send({ error: err.message });
     }
 });
+
 app.post('/horarios', async (req, res) => {
     const { idEmpleado, horarios } = req.body;
     const sql = 'INSERT INTO horarios (id_empleado, dia_semana, hora_inicio, hora_fin) VALUES ($1, $2, $3, $4)';
