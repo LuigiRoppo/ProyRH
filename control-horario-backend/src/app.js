@@ -53,8 +53,8 @@ client.connect(err => {
     }
 });
 const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSalida) => {
-    if (!horaEntrada || !horaSalida) {
-        return 0;
+    if (!fechaEntrada || !horaEntrada || !fechaSalida || !horaSalida) {
+        return NaN; // Devuelve NaN si falta algún valor
     }
     const entrada = moment.tz(`${fechaEntrada}T${horaEntrada}`, 'Europe/Madrid');
     const salida = moment.tz(`${fechaSalida}T${horaSalida}`, 'Europe/Madrid');
@@ -69,6 +69,7 @@ const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSal
 
     return parseFloat(horas.toFixed(2));  // Limitar a 2 decimales
 };
+
 
 
 
@@ -268,8 +269,17 @@ app.post('/marcar-salida', async (req, res) => {
 
         const { id_registro, fecha, hora_entrada } = registro.rows[0];
         const ahora = moment().tz('Europe/Madrid');
+        const fechaSalida = ahora.format('YYYY-MM-DD');
         const horaSalida = ahora.format('HH:mm:ss');
-        const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
+        
+        // Calcular horas trabajadas
+        const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, fechaSalida, horaSalida);
+
+        // Validar que horasTrabajadas no sea NaN
+        if (isNaN(horasTrabajadas)) {
+            console.error("Error: Horas trabajadas es NaN");
+            return res.status(500).send({ error: 'Error al calcular horas trabajadas' });
+        }
 
         await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', 
             [horaSalida, horasTrabajadas, id_registro]);
@@ -279,6 +289,7 @@ app.post('/marcar-salida', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 
 app.post('/horarios', async (req, res) => {
     const { idEmpleado, horarios } = req.body;
