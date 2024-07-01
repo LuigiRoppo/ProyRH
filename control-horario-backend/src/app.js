@@ -60,7 +60,7 @@ const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSal
         const salida = moment.tz(`${fechaSalida}T${horaSalida}`, 'Europe/Madrid');
 
         if (salida.isBefore(entrada)) {
-            salida.add(1, 'day');
+            salida.add(1, 'day22');
         }
 
         const duracion = moment.duration(salida.diff(entrada));
