@@ -267,37 +267,45 @@ app.post('/marcar-salida', async (req, res) => {
         console.log(`Registro encontrado: ${JSON.stringify(registro.rows[0])}`);
 
         const { id_registro, fecha, hora_entrada } = registro.rows[0];
-        const ahora = moment().tz('Europe/Madrid');
-        const fechaSalida = ahora.format('YYYY-MM-DD');
-        const horaSalida = ahora.format('HH:mm:ss');
-        
-        console.log(`Fecha de entrada: ${fecha}, Hora de entrada: ${hora_entrada}`);
-        console.log(`Fecha de salida: ${fechaSalida}, Hora de salida: ${horaSalida}`);
+        const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+        const diaSemana = new Date(fecha).getDay();
+        const diaNombre = diaIndices[diaSemana];
 
-        // Calcular horas trabajadas
-        const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, fechaSalida, horaSalida);
-
-        console.log(`Horas trabajadas calculadas: ${horasTrabajadas}`);
-
-        // Validar que horasTrabajadas no sea NaN
-        if (isNaN(horasTrabajadas)) {
-            console.error("Error: Horas trabajadas es NaN");
-            return res.status(500).send({ error: 'Error al calcular horas trabajadas' });
+        const horarios = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
+        if (horarios.rows.length === 0) {
+            console.log("No se encontró horario para el empleado", id_empleado, "el día", diaNombre);
+            return res.status(404).send({ message: 'Horario no encontrado para el empleado' });
         }
 
-        console.log(`Actualizando registro ${id_registro} con hora de salida ${horaSalida} y horas trabajadas ${horasTrabajadas}`);
+        console.log(`Horario encontrado: ${JSON.stringify(horarios.rows[0])}`);
 
-        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', 
-            [horaSalida, horasTrabajadas, id_registro]);
+        const ahora = moment().tz('Europe/Madrid');
+        let fechaHoraFin = moment.tz(`${fecha}T${horarios.rows[0].hora_fin}`, 'Europe/Madrid');
+        if (horarios.rows[0].hora_fin === '00:00') {
+            fechaHoraFin = fechaHoraFin.add(1, 'day');  // Add one day for midnight case
+        }
+        const horaFinPermitida = fechaHoraFin.add(5, 'minutes');
 
-        console.log(`Registro ${id_registro} actualizado con éxito`);
+        console.log(`Hora fin permitida: ${horaFinPermitida.format('HH:mm:ss')}`);
+        console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
 
-        res.send({ message: 'Salida marcada con éxito' });
+        const horaSalida = ahora.format('HH:mm:ss');
+        const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
+
+        if (!isNaN(horasTrabajadas)) {  // Check if horasTrabajadas is a valid number
+            await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+            res.send({ message: 'Salida marcada con éxito' });
+        } else {
+            console.error("Error en el cálculo de horas trabajadas:", horasTrabajadas);
+            res.status(500).send({ error: 'Error en el cálculo de horas trabajadas' });
+        }
     } catch (err) {
         console.error("Error en la consulta del registro:", err.message);
         res.status(500).send({ error: err.message });
     }
 });
+
+
 
 
 
