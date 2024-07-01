@@ -69,6 +69,7 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación');
         }
     };
+
     const handleSalida = async () => {
         if (!employeeId) {
             alert("Primero debe ingresar su ID de empleado.");
@@ -80,9 +81,16 @@ function AddEmployeeForm() {
             const ultimoRegistro = await getUltimoRegistroByEmpleadoId(employeeId);
             console.log('Último registro obtenido:', ultimoRegistro);
             if (ultimoRegistro && !ultimoRegistro.hora_salida) {
+                const ahora = moment().tz('Europe/Madrid');
+                const horaSalida = ahora.format('HH:mm:ss');
+                const horasTrabajadas = calcularHorasTrabajadas(ultimoRegistro.fecha, ultimoRegistro.hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
+                
                 const salidaRespuesta = await marcarSalida({
-                    id_empleado: employeeId
+                    id_empleado: employeeId,
+                    hora_salida: horaSalida,
+                    horas_trabajadas: horasTrabajadas
                 });
+    
                 console.log('Respuesta de marcar salida:', salidaRespuesta);
                 alert('Hora de salida registrada: ' + salidaRespuesta.message);
                 resetForm();
@@ -94,6 +102,7 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación de salida');
         }
     };
+    
     
     const resetForm = () => {
         setEmployeeId('');

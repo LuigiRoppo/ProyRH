@@ -59,7 +59,6 @@ const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSal
         const entrada = moment.tz(`${fechaEntrada}T${horaEntrada}`, 'Europe/Madrid');
         const salida = moment.tz(`${fechaSalida}T${horaSalida}`, 'Europe/Madrid');
 
-        // Manejar cruces de medianoche
         if (salida.isBefore(entrada)) {
             salida.add(1, 'day');
         }
@@ -77,6 +76,7 @@ const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSal
         return 0;  // Devolver 0 en caso de error
     }
 };
+
 
 
 
@@ -290,11 +290,7 @@ app.post('/marcar-salida', async (req, res) => {
         const horaSalida = ahora.format('HH:mm:ss');
         const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
 
-        // Validar horas trabajadas antes de actualizar la base de datos
-        if (isNaN(horasTrabajadas)) {
-            console.error("Error: Horas trabajadas es NaN");
-            return res.status(500).send({ error: 'Error al calcular horas trabajadas' });
-        }
+        console.log(`Calculando horas trabajadas: ${horasTrabajadas}`);
 
         await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
         res.send({ message: 'Salida marcada con éxito' });
@@ -303,6 +299,7 @@ app.post('/marcar-salida', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
 
 
 
