@@ -193,8 +193,10 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 if (horarios.rows[0].hora_fin === '00:00') {
                     fechaHoraFin = fechaHoraFin.add(1, 'day');  // Add one day for midnight case
                 }
-                const horaFinPermitida = fechaHoraFin.add(5, 'minutes');
-                console.log("Hora fin permitida después de agregar 5 minutos:", horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
+
+                const minutosAleatorios = Math.floor(Math.random() * 5) + 1; // Genera un número aleatorio entre 1 y 5
+                const horaFinPermitida = fechaHoraFin.add(minutosAleatorios, 'minutes');
+                console.log(`Hora fin permitida después de agregar ${minutosAleatorios} minutos:`, horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
                 if (ahora.isAfter(horaFinPermitida)) {
                     const horaSalida = moment(fechaHoraFin).add(1, 'minutes').format('HH:mm:ss');
@@ -221,7 +223,8 @@ const verificarYActualizarRegistrosPendientes = async () => {
     }
 };
 
-setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+setInterval(verificarYActualizarRegistrosPendientes, 30 * 60 * 1000);
+
 
 
 
