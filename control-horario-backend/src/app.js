@@ -4,6 +4,7 @@ const cors = require('cors');
 const { Client } = require('pg');
 const bodyParser = require('body-parser');
 const moment = require('moment-timezone');
+const { calcularHorasTrabajadas } = require('./utils'); 
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -54,28 +55,6 @@ client.connect(err => {
 });
 
 
-const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSalida) => {
-    try {
-        const entrada = moment.tz(`${fechaEntrada}T${horaEntrada}`, 'Europe/Madrid');
-        const salida = moment.tz(`${fechaSalida}T${horaSalida}`, 'Europe/Madrid');
-
-        if (salida.isBefore(entrada)) {
-            salida.add(1, 'day');
-        }
-
-        const duracion = moment.duration(salida.diff(entrada));
-        const horas = duracion.asHours();
-
-        if (isNaN(horas)) {
-            throw new Error("CAlculo de horas trabajadas resultó en NaN");
-        }
-
-        return parseFloat(horas.toFixed(2));  // Limitar a 2 decimales
-    } catch (error) {
-        console.error("Error al calcular horas trabajadas:", error);
-        return 0;  // Devolver 0 en caso de error
-    }
-};
 
 
 

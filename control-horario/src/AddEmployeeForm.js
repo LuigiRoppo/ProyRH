@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import moment from 'moment-timezone';
 import './AddEmployeeForm.css';
 import { getEmpleadoById, getUltimoRegistroByEmpleadoId, marcarEntrada, marcarSalida, getHorarioByEmpleadoId } from './apiService';
+import { calcularHorasTrabajadas } from './utils'; 
 
 function AddEmployeeForm() {
     const [employeeId, setEmployeeId] = useState('');
