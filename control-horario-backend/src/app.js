@@ -199,6 +199,14 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 if (ahora.isAfter(horaFinPermitida)) {
                     const horaSalida = moment(fechaHoraFin).add(1, 'minutes').format('HH:mm:ss');
                     const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
+
+                    console.log(`Calculando horas trabajadas (automático):`);
+                    console.log(`Fecha de entrada: ${fecha}`);
+                    console.log(`Hora de entrada: ${hora_entrada}`);
+                    console.log(`Fecha de salida: ${ahora.format('YYYY-MM-DD')}`);
+                    console.log(`Hora de salida: ${horaSalida}`);
+                    console.log(`Horas trabajadas: ${horasTrabajadas}`);
+
                     await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
                     console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
                 } else {
@@ -214,6 +222,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
 };
 
 setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+
 
 
 
