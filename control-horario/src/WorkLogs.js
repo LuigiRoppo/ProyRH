@@ -20,7 +20,7 @@ function WorkLogs({ employeeId }) {
           fecha: formatDate(log.fecha),
           horasTrabajadas: calculateHours(log.hora_entrada, log.hora_salida)
         }));
-        setLogs(formattedData.slice(-5)); // Mostrar solo los últimos 5 registros
+        setLogs(formattedData.slice(0, 5)); // Mostrar solo los primeros 5 registros
         calculateWeeklyHours(formattedData);
       } catch (error) {
         console.error('Error fetching work logs:', error);
