@@ -60,14 +60,14 @@ const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSal
         const salida = moment.tz(`${fechaSalida}T${horaSalida}`, 'Europe/Madrid');
 
         if (salida.isBefore(entrada)) {
-            salida.add(1, 'day22');
+            salida.add(1, 'day');
         }
 
         const duracion = moment.duration(salida.diff(entrada));
         const horas = duracion.asHours();
 
         if (isNaN(horas)) {
-            throw new Error("Cálculo de horas trabajadas resultó en NaN");
+            throw new Error("CAlculo de horas trabajadas resultó en NaN");
         }
 
         return parseFloat(horas.toFixed(2));  // Limitar a 2 decimales
