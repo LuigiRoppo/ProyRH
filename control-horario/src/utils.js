@@ -14,5 +14,5 @@ export const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, 
     const duracion = moment.duration(salida.diff(entrada));
     const horas = duracion.asHours();
 
-    return parseFloat(horas.toFixed(2));  // Limitar a 2 decimales
+    return parseFloat(horas.toFixed(2));  
 };
