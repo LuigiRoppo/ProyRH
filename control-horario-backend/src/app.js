@@ -291,15 +291,24 @@ app.post('/marcar-salida', async (req, res) => {
         const horaSalida = ahora.format('HH:mm:ss');
         const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
 
-        console.log(`Calculando horas trabajadas: ${horasTrabajadas}`);
+        if (isNaN(horasTrabajadas)) {
+            console.error('Error al calcular horas trabajadas: el resultado es NaN');
+            return res.status(500).send({ error: 'Error al calcular horas trabajadas' });
+        }
 
-        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+        console.log(`Calculando horas trabajadas: ${horasTrabajadas}`);
+        console.log(`Actualizando registro: ID ${id_registro}, Hora de Salida: ${horaSalida}, Horas Trabajadas: ${horasTrabajadas}`);
+
+        const updateResult = await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+        console.log(`Resultado de la actualización: ${JSON.stringify(updateResult)}`);
+        
         res.send({ message: 'Salida marcada con éxito' });
     } catch (err) {
         console.error("Error en la consulta del registro:", err.message);
         res.status(500).send({ error: err.message });
     }
 });
+
 
 
 
