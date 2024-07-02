@@ -276,7 +276,7 @@ app.post('/marcar-entrada', async (req, res) => {
 });
 
 app.post('/marcar-salida', async (req, res) => {
-    const { id_empleado } = req.body;
+    const { id_empleado, hora_salida, horas_trabajadas } = req.body;
     console.log(`Intentando marcar salida para el empleado con ID: ${id_empleado}`);
 
     try {
@@ -296,27 +296,18 @@ app.post('/marcar-salida', async (req, res) => {
         console.log(`Registro encontrado: ${JSON.stringify(registro.rows[0])}`);
 
         const { id_registro, fecha, hora_entrada } = registro.rows[0];
-        const ahora = moment().tz('Europe/Madrid');
-        const horaSalida = ahora.format('HH:mm:ss');
-        const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
+        console.log(`Datos recibidos para actualización:`);
+        console.log(`Hora de salida: ${hora_salida}`);
+        console.log(`Horas trabajadas: ${horas_trabajadas}`);
 
-        if (isNaN(horasTrabajadas)) {
-            console.error('Error al calcular horas trabajadas: el resultado es NaN');
-            return res.status(500).send({ error: 'Error al calcular horas trabajadas' });
-        }
-
-        console.log(`Calculando horas trabajadas: ${horasTrabajadas}`);
-        console.log(`Actualizando registro: ID ${id_registro}, Hora de Salida: ${horaSalida}, Horas Trabajadas: ${horasTrabajadas}`);
-
-        const updateResult = await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
-        console.log(`Resultado de la actualización: ${JSON.stringify(updateResult)}`);
-        
+        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [hora_salida, horas_trabajadas, id_registro]);
         res.send({ message: 'Salida marcada con éxito' });
     } catch (err) {
         console.error("Error en la consulta del registro:", err.message);
         res.status(500).send({ error: err.message });
     }
 });
+
 
 
 
