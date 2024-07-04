@@ -17,8 +17,7 @@ function WorkLogs({ employeeId }) {
         const data = await getRegistrosByEmpleadoId(employeeId, startDate.toISOString().slice(0, 10), endDate.toISOString().slice(0, 10));
         const formattedData = data.map(log => ({
           ...log,
-          fecha: formatDate(log.fecha),
-          horasTrabajadas: calculateHours(log.hora_entrada, log.hora_salida)
+          fecha: formatDate(log.fecha)
         }));
         setLogs(formattedData.slice(0, 5)); // Mostrar solo los primeros 5 registros
         calculateWeeklyHours(formattedData);
@@ -38,14 +37,6 @@ function WorkLogs({ employeeId }) {
     return `${day}/${month}/${year}`;
   };
 
-  const calculateHours = (horaEntrada, horaSalida) => {
-    if (!horaSalida) return 0;
-    const entrada = moment(horaEntrada, 'HH:mm:ss');
-    const salida = moment(horaSalida, 'HH:mm:ss');
-    const diff = salida.diff(entrada, 'hours', true);
-    return diff.toFixed(2);
-  };
-
   const getWeekNumber = (date) => {
     const startOfYear = new Date(date.getFullYear(), 0, 1);
     const pastDaysOfYear = (date - startOfYear) / 86400000;
@@ -62,7 +53,7 @@ function WorkLogs({ employeeId }) {
       const key = `${year}-${week}`;
       if (!acc[key]) acc[key] = { hoursOrd: 0, records: [] };
 
-      const horasTrabajadas = parseFloat(log.horasTrabajadas);
+      const horasTrabajadas = parseFloat(log.horas_trabajadas);
       acc[key].hoursOrd += horasTrabajadas;
       acc[key].records.push(log);
 
@@ -74,7 +65,7 @@ function WorkLogs({ employeeId }) {
       return { year, week, ...value };
     });
 
-    setWeeklyHours(weeklyHoursArray.slice(-5)); // Mostrar solo las últimas 5 semanas
+    setWeeklyHours(weeklyHoursArray.slice(0, 5)); // Mostrar solo las primeras 5 semanas
   };
 
   return (
@@ -99,7 +90,7 @@ function WorkLogs({ employeeId }) {
               <td>{log.fecha}</td>
               <td>{log.hora_entrada}</td>
               <td>{log.hora_salida}</td>
-              <td>{log.horasTrabajadas}</td>
+              <td>{log.horas_trabajadas}</td>
             </tr>
           ))}
         </tbody>
