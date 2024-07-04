@@ -109,14 +109,14 @@ app.get('/registros/:id_empleado', async (req, res) => {
   
     try {
       const result = await client.query(
-        'SELECT id_registro, id_empleado, TO_CHAR(fecha, \'YYYY-MM-DD\') as fecha, hora_entrada, hora_salida FROM registros_horarios WHERE id_empleado = $1 AND fecha BETWEEN $2 AND $3 ORDER BY fecha DESC',
+        'SELECT id_registro, id_empleado, TO_CHAR(fecha, \'YYYY-MM-DD\') as fecha, hora_entrada, hora_salida, horas_trabajadas FROM registros_horarios WHERE id_empleado = $1 AND fecha BETWEEN $2 AND $3 ORDER BY fecha DESC',
         [id_empleado, startDate, endDate]
       );
       res.send(result.rows);
     } catch (err) {
       res.status(500).send({ error: err.message });
     }
-});  
+});
 app.get('/horarios', async (req, res) => {
     try {
         const result = await client.query('SELECT * FROM horarios');
