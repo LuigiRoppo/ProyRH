@@ -31,7 +31,6 @@ function AddEmployeeForm() {
 
         return parseFloat(horas.toFixed(2));  // Limitar a 2 decimales
     };
-
     const handleIdentify = async () => {
         try {
             const empleado = await getEmpleadoById(employeeId);
@@ -47,7 +46,6 @@ function AddEmployeeForm() {
             alert('Error al buscar el empleado');
         }
     };
-    
     const handleEntrada = async () => {
         const now = moment().tz('Europe/Madrid'); 
         const fecha = now.format('YYYY-MM-DD');
@@ -56,7 +54,7 @@ function AddEmployeeForm() {
         try {
             const horarioArray = await getHorarioByEmpleadoId(employeeId);
             console.log('Horario:', horarioArray);
-            const diasSemana = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+            const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
             const diaSemana = diasSemana[now.day()];
             const horariosDelDia = horarioArray.filter(h => h.dia_semana === diaSemana);
             console.log('Horarios del día:', horariosDelDia);
@@ -101,9 +99,6 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación');
         }
     };
-    
-    
-
     const handleSalida = async () => {
         if (!employeeId) {
             alert("Primero debe ingresar su ID de empleado.");
