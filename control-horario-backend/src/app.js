@@ -259,7 +259,7 @@ app.post('/marcar-entrada', async (req, res) => {
                 return res.status(404).send({ message: 'Horario no encontrado para el empleado en el día especificado.' });
             }
             const ahora = moment(hora_entrada, 'HH:mm:ss').tz('Europe/Madrid');
-            const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(30, 'minutes').tz('Europe/Madrid');
+            const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(1, 'minutes').tz('Europe/Madrid');
 
             console.log(`Horario seleccionado desde la DB: inicio=${horario.hora_inicio}`);
             console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
