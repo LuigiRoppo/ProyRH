@@ -107,7 +107,6 @@ export const getRegistrosByEmpleadoId = async (id_empleado, startDate, endDate) 
         throw error;
     }
 };
-
 export const marcarEntrada = async (registro) => {
     try {
         console.log('Enviando datos a marcarEntrada:', registro);
