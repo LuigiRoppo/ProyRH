@@ -182,10 +182,12 @@ const verificarYActualizarRegistrosPendientes = async () => {
             const diaNombreOriginal = diaIndices[diaSemana];
             const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-            const horarios = await client.query('SELECT hora_fin, id_horario FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
+            const horarios = await client.query('SELECT hora_fin, id_horario FROM horarios WHERE id_empleado = $1 AND dia_semana = $2 ORDER BY hora_fin ASC', [id_empleado, diaNombre]);
             console.log(`Horarios obtenidos para empleado ${id_empleado} en día ${diaNombre}:`, horarios.rows);
 
-            for (const horario of horarios.rows) {
+            // Verificar solo el primer horario pendiente
+            if (horarios.rows.length > 0) {
+                const horario = horarios.rows[0];  // Selecciona el primer horario
                 const ahora = moment().tz('Europe/Madrid');
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
@@ -209,18 +211,10 @@ const verificarYActualizarRegistrosPendientes = async () => {
                     console.log(`Hora de salida: ${horaSalida}`);
                     console.log(`Horas trabajadas: ${horasTrabajadas}`);
 
-                    // Aquí verificamos si el registro ya fue actualizado con este id_horario
-                    const registroExistente = await client.query('SELECT * FROM registros_horarios WHERE id_registro = $1 AND id_horario = $2 AND hora_salida IS NOT NULL', [id_registro, horario.id_horario]);
-
-                    if (registroExistente.rows.length === 0) {
-                        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2, id_horario = $3 WHERE id_registro = $4', [horaSalida, horasTrabajadas, horario.id_horario, id_registro]);
-                        console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro} con id_horario ${horario.id_horario}`);
-                    } else {
-                        console.log(`El registro ${id_registro} con id_horario ${horario.id_horario} ya ha sido actualizado previamente.`);
-                    }
-                    break; // Salir del bucle una vez que se actualiza el registro
+                    await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2, id_horario = $3 WHERE id_registro = $4', [horaSalida, horasTrabajadas, horario.id_horario, id_registro]);
+                    console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro} con id_horario ${horario.id_horario}`);
                 } else {
-                    console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro}`);
+                    console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro} con id_horario ${horario.id_horario}`);
                 }
             }
         }
