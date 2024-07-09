@@ -137,5 +137,14 @@ export const marcarSalida = async (registro) => {
         throw error;
     }
 };
-
-
+export const verificarRegistroExistente = async (id_empleado, fecha, id_horario) => {
+    try {
+        const response = await axios.get(`${BASE_URL}/verificar-registro`, {
+            params: { id_empleado, fecha, id_horario }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error al verificar registro existente:', error);
+        return [];
+    }
+};

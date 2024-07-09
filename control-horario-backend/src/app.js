@@ -83,8 +83,19 @@ const calcularHorasTrabajadas = (fechaEntrada, horaEntrada, fechaSalida, horaSal
 
 
 
-
-
+app.get('/verificar-registro', async (req, res) => {
+    const { id_empleado, fecha, id_horario } = req.query;
+    try {
+        const registros = await client.query(`
+            SELECT * FROM registros_horarios 
+            WHERE id_empleado = $1 AND fecha = $2 AND id_horario = $3 AND hora_salida IS NOT NULL
+        `, [id_empleado, fecha, id_horario]);
+        res.send(registros.rows);
+    } catch (err) {
+        console.error("Error al verificar registros existentes:", err.message);
+        res.status(500).send({ error: err.message });
+    }
+});
 app.get('/ultimo-registro/:id_empleado', async (req, res) => {
     const idEmpleado = req.params.id_empleado;
     const sql = `

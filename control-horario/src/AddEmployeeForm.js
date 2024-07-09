@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
 import moment from 'moment-timezone';
 import './AddEmployeeForm.css';
-import { getEmpleadoById, getUltimoRegistroByEmpleadoId, marcarEntrada, marcarSalida, getHorarioByEmpleadoId } from './apiService';
+import 
+{ getEmpleadoById, 
+  getUltimoRegistroByEmpleadoId, 
+  marcarEntrada, 
+  marcarSalida, 
+  getHorarioByEmpleadoId, 
+  verificarRegistroExistente 
+} from './apiService';
 
 function AddEmployeeForm() {
     const [employeeId, setEmployeeId] = useState('');
@@ -55,29 +62,37 @@ function AddEmployeeForm() {
             console.log('Horarios del día:', horariosDelDia);
     
             if (horariosDelDia.length > 0) {
-                const horario = horariosDelDia.reduce((earliest, current) => {
-                    return moment(current.hora_inicio, 'HH:mm').isBefore(moment(earliest.hora_inicio, 'HH:mm')) ? current : earliest;
-                });
-                console.log('Horario seleccionado:', horario);
+                // Verificar cada horario del día
+                for (let i = 0; i < horariosDelDia.length; i++) {
+                    const horario = horariosDelDia[i];
+                    
+                    // Verificar si ya existe una entrada para este horario en el mismo día
+                    const registrosExistentes = await verificarRegistroExistente(employeeId, fecha, horario.id_horario);
+                    if (registrosExistentes.length === 0) {
+                        const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(30, 'minutes').tz('Europe/Madrid');
+                        console.log('Horario seleccionado:', horario);
+                        console.log('Hora de inicio permitida:', horaInicioPermitida.format('HH:mm')); 
+                        console.log('Hora actual:', now.format('HH:mm'));
     
-                const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(30, 'minutes').tz('Europe/Madrid');
-                console.log('Hora de inicio permitida:', horaInicioPermitida.format('HH:mm')); 
-                console.log('Hora actual:', now.format('HH:mm'));
-    
-                if (now.isSameOrAfter(horaInicioPermitida)) {
-                    const entradaRespuesta = await marcarEntrada({
-                        id_empleado: employeeId,
-                        fecha,
-                        hora_entrada: horaEntrada,
-                        id_horario: horario.id_horario  // Asegúrate de enviar id_horario
-                    });
-                    console.log('Respuesta de la API:', entradaRespuesta);
-                    setIdRegistro(entradaRespuesta.id); 
-                    alert('Hora de entrada registrada con éxito');
-                    resetForm();
-                } else {
-                    alert(`No se permite marcar entrada antes de las ${horaInicioPermitida.format('HH:mm')} o después de las ${horario.hora_fin}`);
+                        if (now.isSameOrAfter(horaInicioPermitida)) {
+                            const entradaRespuesta = await marcarEntrada({
+                                id_empleado: employeeId,
+                                fecha,
+                                hora_entrada: horaEntrada,
+                                id_horario: horario.id_horario  // Asegúrate de enviar id_horario
+                            });
+                            console.log('Respuesta de la API:', entradaRespuesta);
+                            setIdRegistro(entradaRespuesta.id); 
+                            alert('Hora de entrada registrada con éxito');
+                            resetForm();
+                            return;
+                        } else {
+                            alert(`No se permite marcar entrada antes de las ${horaInicioPermitida.format('HH:mm')} o después de las ${horario.hora_fin}`);
+                            return;
+                        }
+                    }
                 }
+                alert('Ya se han registrado entradas para todos los horarios disponibles hoy.');
             } else {
                 alert('No se encontró el horario para este empleado o la hora de inicio no está definida.');
             }
