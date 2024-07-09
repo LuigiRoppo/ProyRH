@@ -236,7 +236,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
     }
 };
 
-setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+setInterval(verificarYActualizarRegistrosPendientes, 30 * 60 * 1000);
 
 
 
@@ -251,7 +251,7 @@ app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada, id_horario } = req.body;
     console.log(`Datos recibidos para marcar entrada: ${JSON.stringify(req.body)}`);
 
-    const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
     const diaSemana = new Date(fecha).getDay();
     const diaNombre = diaIndices[diaSemana];
 
@@ -270,7 +270,7 @@ app.post('/marcar-entrada', async (req, res) => {
                 return res.status(404).send({ message: 'Horario no encontrado para el empleado en el día especificado.' });
             }
             const ahora = moment(hora_entrada, 'HH:mm:ss').tz('Europe/Madrid');
-            const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(1, 'minutes').tz('Europe/Madrid');
+            const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(30, 'minutes').tz('Europe/Madrid');
 
             console.log(`Horario seleccionado desde la DB: inicio=${horario.hora_inicio}`);
             console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
