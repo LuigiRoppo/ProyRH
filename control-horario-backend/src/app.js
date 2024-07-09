@@ -182,37 +182,40 @@ const verificarYActualizarRegistrosPendientes = async () => {
             const diaNombreOriginal = diaIndices[diaSemana];
             const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-            const horarios = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
+            const horarios = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2 ORDER BY hora_fin', [id_empleado, diaNombre]);
             console.log(`Horarios obtenidos para empleado ${id_empleado} en día ${diaNombre}:`, horarios.rows);
 
             if (horarios.rows.length > 0) {
                 const ahora = moment().tz('Europe/Madrid');
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
-                let fechaHoraFin = moment.tz(`${fecha}T${horarios.rows[0].hora_fin}`, 'Europe/Madrid');
-                if (horarios.rows[0].hora_fin === '00:00') {
-                    fechaHoraFin = fechaHoraFin.add(1, 'day');  // Add one day for midnight case
-                }
+                for (const horario of horarios.rows) {
+                    let fechaHoraFin = moment.tz(`${fecha}T${horario.hora_fin}`, 'Europe/Madrid');
+                    if (horario.hora_fin === '00:00') {
+                        fechaHoraFin = fechaHoraFin.add(1, 'day');  // Add one day for midnight case
+                    }
 
-                const minutosAleatorios = Math.floor(Math.random() * 5) + 1; // Genera un número aleatorio entre 1 y 5
-                const horaFinPermitida = fechaHoraFin.add(minutosAleatorios, 'minutes');
-                console.log(`Hora fin permitida después de agregar ${minutosAleatorios} minutos:`, horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
+                    const minutosAleatorios = Math.floor(Math.random() * 5) + 1; // Genera un número aleatorio entre 1 y 5
+                    const horaFinPermitida = fechaHoraFin.add(minutosAleatorios, 'minutes');
+                    console.log(`Hora fin permitida después de agregar ${minutosAleatorios} minutos:`, horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
-                if (ahora.isAfter(horaFinPermitida)) {
-                    const horaSalida = moment(fechaHoraFin).add(1, 'minutes').format('HH:mm:ss');
-                    const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
+                    if (ahora.isAfter(horaFinPermitida)) {
+                        const horaSalida = moment(fechaHoraFin).add(1, 'minutes').format('HH:mm:ss');
+                        const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
 
-                    console.log(`Calculando horas trabajadas (automático):`);
-                    console.log(`Fecha de entrada: ${fecha}`);
-                    console.log(`Hora de entrada: ${hora_entrada}`);
-                    console.log(`Fecha de salida: ${ahora.format('YYYY-MM-DD')}`);
-                    console.log(`Hora de salida: ${horaSalida}`);
-                    console.log(`Horas trabajadas: ${horasTrabajadas}`);
+                        console.log(`Calculando horas trabajadas (automático):`);
+                        console.log(`Fecha de entrada: ${fecha}`);
+                        console.log(`Hora de entrada: ${hora_entrada}`);
+                        console.log(`Fecha de salida: ${ahora.format('YYYY-MM-DD')}`);
+                        console.log(`Hora de salida: ${horaSalida}`);
+                        console.log(`Horas trabajadas: ${horasTrabajadas}`);
 
-                    await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
-                    console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
-                } else {
-                    console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro}`);
+                        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
+                        console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro}`);
+                        break; // Exit loop after marking the first applicable record
+                    } else {
+                        console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro}`);
+                    }
                 }
             } else {
                 console.log(`No se encontraron horarios para el empleado ${id_empleado} en el día ${diaNombre}`);
@@ -223,7 +226,8 @@ const verificarYActualizarRegistrosPendientes = async () => {
     }
 };
 
-setInterval(verificarYActualizarRegistrosPendientes, 30 * 60 * 1000);
+setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+
 
 
 
