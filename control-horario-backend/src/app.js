@@ -209,8 +209,16 @@ const verificarYActualizarRegistrosPendientes = async () => {
                     console.log(`Hora de salida: ${horaSalida}`);
                     console.log(`Horas trabajadas: ${horasTrabajadas}`);
 
-                    await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2, id_horario = $3 WHERE id_registro = $4', [horaSalida, horasTrabajadas, horario.id_horario, id_registro]);
-                    console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro} con id_horario ${horario.id_horario}`);
+                    // Aquí verificamos si el registro ya fue actualizado con este id_horario
+                    const registroExistente = await client.query('SELECT * FROM registros_horarios WHERE id_registro = $1 AND id_horario = $2 AND hora_salida IS NOT NULL', [id_registro, horario.id_horario]);
+
+                    if (registroExistente.rows.length === 0) {
+                        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2, id_horario = $3 WHERE id_registro = $4', [horaSalida, horasTrabajadas, horario.id_horario, id_registro]);
+                        console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro} con id_horario ${horario.id_horario}`);
+                    } else {
+                        console.log(`El registro ${id_registro} con id_horario ${horario.id_horario} ya ha sido actualizado previamente.`);
+                    }
+                    break; // Salir del bucle una vez que se actualiza el registro
                 } else {
                     console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro}`);
                 }
