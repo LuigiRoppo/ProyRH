@@ -169,20 +169,20 @@ const verificarYActualizarRegistrosPendientes = async () => {
         console.log("Iniciando verificación de registros pendientes...");
 
         const registros = await client.query(`
-            SELECT id_registro, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, hora_entrada 
+            SELECT id_registro, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, hora_entrada, id_horario 
             FROM registros_horarios 
             WHERE hora_salida IS NULL
         `);
         console.log("Registros pendientes obtenidos:", registros.rows);
 
         for (const registro of registros.rows) {
-            const { id_registro, id_empleado, fecha, hora_entrada } = registro;
+            const { id_registro, id_empleado, fecha, hora_entrada, id_horario } = registro;
             const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
             const diaSemana = new Date(fecha).getDay();
             const diaNombreOriginal = diaIndices[diaSemana];
             const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-            const horarios = await client.query('SELECT hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2 ORDER BY hora_fin', [id_empleado, diaNombre]);
+            const horarios = await client.query('SELECT id_horario, hora_fin FROM horarios WHERE id_empleado = $1 AND dia_semana = $2 ORDER BY hora_fin', [id_empleado, diaNombre]);
             console.log(`Horarios obtenidos para empleado ${id_empleado} en día ${diaNombre}:`, horarios.rows);
 
             if (horarios.rows.length > 0) {
@@ -190,6 +190,8 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 console.log("Hora actual:", ahora.format('YYYY-MM-DD HH:mm:ss'));
 
                 for (const horario of horarios.rows) {
+                    if (id_horario !== horario.id_horario) continue;
+
                     let fechaHoraFin = moment.tz(`${fecha}T${horario.hora_fin}`, 'Europe/Madrid');
                     if (horario.hora_fin === '00:00') {
                         fechaHoraFin = fechaHoraFin.add(1, 'day');  // Add one day for midnight case
@@ -227,6 +229,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
 };
 
 setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+
 
 
 
