@@ -105,9 +105,10 @@ function AddEmployeeForm() {
                 console.log('Hora de entrada:', ultimoRegistro.hora_entrada);
                 console.log('Hora de salida:', horaSalida);
                 console.log('Horas trabajadas:', horasTrabajadas);
-
+    
                 const salidaRespuesta = await marcarSalida({
                     id_empleado: employeeId,
+                    id_registro: ultimoRegistro.id_registro,  // Agregar el id_registro
                     hora_salida: horaSalida,
                     horas_trabajadas: horasTrabajadas
                 });
@@ -123,6 +124,7 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación de salida');
         }
     };
+    
 
     const resetForm = () => {
         setEmployeeId('');

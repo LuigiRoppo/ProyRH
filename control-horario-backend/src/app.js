@@ -235,6 +235,7 @@ setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
 
 
 
+
 app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada } = req.body;
     console.log(`Datos recibidos para marcar entrada: ${JSON.stringify(req.body)}`);
