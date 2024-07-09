@@ -288,7 +288,7 @@ app.post('/marcar-entrada', async (req, res) => {
 
 
 app.post('/marcar-salida', async (req, res) => {
-    const { id_empleado, id_registro, hora_salida, horas_trabajadas, id_horario } = req.body;
+    const { id_empleado, id_registro, hora_salida, horas_trabajadas } = req.body;
     console.log(`Intentando marcar salida para el empleado con ID: ${id_empleado}`);
 
     try {
@@ -312,7 +312,7 @@ app.post('/marcar-salida', async (req, res) => {
         console.log(`Horas trabajadas: ${horas_trabajadas}`);
         console.log(`ID Horario: ${id_horario}`);
 
-        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2, id_horario = $3 WHERE id_registro = $4', [hora_salida, horas_trabajadas, id_horario, id_registro]);
+        await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2, id_horario = $3 WHERE id_registro = $4', [hora_salida, horas_trabajadas, id_registro]);
         res.send({ message: 'Salida marcada con éxito' });
     } catch (err) {
         console.error("Error en la consulta del registro:", err.message);
