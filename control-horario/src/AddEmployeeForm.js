@@ -109,6 +109,7 @@ function AddEmployeeForm() {
                 const salidaRespuesta = await marcarSalida({
                     id_empleado: employeeId,
                     id_registro: ultimoRegistro.id_registro,  // Agregar el id_registro
+                    id_horario: ultimoRegistro.id_horario, // Agregar el id_horario si está disponible
                     hora_salida: horaSalida,
                     horas_trabajadas: horasTrabajadas
                 });
@@ -124,6 +125,8 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación de salida');
         }
     };
+    
+    
     
 
     const resetForm = () => {
