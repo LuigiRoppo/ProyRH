@@ -240,7 +240,7 @@ app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada, id_horario } = req.body;
     console.log(`Datos recibidos para marcar entrada: ${JSON.stringify(req.body)}`);
 
-    const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+    const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
     const diaSemana = new Date(fecha).getDay();
     const diaNombre = diaIndices[diaSemana];
 
@@ -268,7 +268,7 @@ app.post('/marcar-entrada', async (req, res) => {
             if (ahora.isSameOrAfter(horaInicioPermitida)) {
                 const result = await client.query(
                     'INSERT INTO registros_horarios (id_empleado, fecha, hora_entrada, id_horario) VALUES ($1, $2, $3, $4) RETURNING id_registro',
-                    [id_empleado, fecha, hora_entrada, id_horario]
+                    [id_empleado, fecha, hora_entrada, horario.id_horario]
                 );
                 console.log('Entrada marcada con éxito para el empleado', id_empleado);
                 res.send({ message: 'Entrada marcada con éxito', id_registro: result.rows[0].id_registro });
@@ -285,7 +285,6 @@ app.post('/marcar-entrada', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
-
 
 
 app.post('/marcar-salida', async (req, res) => {

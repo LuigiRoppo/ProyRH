@@ -49,7 +49,7 @@ function AddEmployeeForm() {
         try {
             const horarioArray = await getHorarioByEmpleadoId(employeeId);
             console.log('Horario:', horarioArray);
-            const diasSemana = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+            const diasSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
             const diaSemana = diasSemana[now.day()];
             const horariosDelDia = horarioArray.filter(h => h.dia_semana === diaSemana);
             console.log('Horarios del día:', horariosDelDia);
@@ -69,7 +69,7 @@ function AddEmployeeForm() {
                         id_empleado: employeeId,
                         fecha,
                         hora_entrada: horaEntrada,
-                        id_horario: horario.id_horario  // Agregar id_horario al marcar entrada
+                        id_horario: horario.id_horario  // Asegúrate de enviar id_horario
                     });
                     console.log('Respuesta de la API:', entradaRespuesta);
                     setIdRegistro(entradaRespuesta.id); 
@@ -86,6 +86,7 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación');
         }
     };
+    
     
 
     const handleSalida = async () => {
