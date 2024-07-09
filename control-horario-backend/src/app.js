@@ -169,28 +169,23 @@ const verificarYActualizarRegistrosPendientes = async () => {
         console.log("Iniciando verificación de registros pendientes...");
 
         const registros = await client.query(`
-            SELECT id_registro, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, hora_entrada 
+            SELECT id_registro, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, hora_entrada, id_horario 
             FROM registros_horarios 
             WHERE hora_salida IS NULL
         `);
         console.log("Registros pendientes obtenidos:", registros.rows);
 
         for (const registro of registros.rows) {
-            const { id_registro, id_empleado, fecha, hora_entrada } = registro;
+            const { id_registro, id_empleado, fecha, hora_entrada, id_horario } = registro;
             const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
             const diaSemana = new Date(fecha).getDay();
             const diaNombreOriginal = diaIndices[diaSemana];
             const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-            // Cambio: Obtener y ordenar horarios
-            const horarios = await client.query('SELECT hora_fin, id_horario FROM horarios WHERE id_empleado = $1 AND dia_semana = $2 ORDER BY hora_fin ASC', [id_empleado, diaNombre]);
+            const horarios = await client.query('SELECT hora_fin, id_horario FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
             console.log(`Horarios obtenidos para empleado ${id_empleado} en día ${diaNombre}:`, horarios.rows);
 
-            // Cambio: Asociar el registro con su horario basado en la hora de entrada
-            const horarioAsociado = horarios.rows.find(horario => {
-                const fechaHoraFin = moment.tz(`${fecha}T${horario.hora_fin}`, 'Europe/Madrid');
-                return moment.tz(`${fecha}T${hora_entrada}`, 'Europe/Madrid').isBefore(fechaHoraFin);
-            });
+            const horarioAsociado = horarios.rows.find(horario => horario.id_horario === id_horario);
 
             if (horarioAsociado) {
                 const ahora = moment().tz('Europe/Madrid');
@@ -216,13 +211,13 @@ const verificarYActualizarRegistrosPendientes = async () => {
                     console.log(`Hora de salida: ${horaSalida}`);
                     console.log(`Horas trabajadas: ${horasTrabajadas}`);
 
-                    // Cambio: Actualizar con id_horario asociado
-                    await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2, id_horario = $3 WHERE id_registro = $4', [horaSalida, horasTrabajadas, horarioAsociado.id_horario, id_registro]);
+                    await client.query('UPDATE registros_horarios SET hora_salida = $1, horas_trabajadas = $2 WHERE id_registro = $3', [horaSalida, horasTrabajadas, id_registro]);
                     console.log(`Hora de salida actualizada automáticamente para el registro ${id_registro} con id_horario ${horarioAsociado.id_horario}`);
                 } else {
-                    // Cambio: Agregar id_horario en el log
                     console.log(`Todavía no es hora de marcar salida automática para el registro ${id_registro} con id_horario ${horarioAsociado.id_horario}`);
                 }
+            } else {
+                console.log(`No se encontró un horario asociado para el registro ${id_registro}`);
             }
         }
     } catch (err) {
@@ -242,7 +237,7 @@ setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
 
 
 app.post('/marcar-entrada', async (req, res) => {
-    const { id_empleado, fecha, hora_entrada } = req.body;
+    const { id_empleado, fecha, hora_entrada, id_horario } = req.body;
     console.log(`Datos recibidos para marcar entrada: ${JSON.stringify(req.body)}`);
 
     const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
@@ -255,11 +250,14 @@ app.post('/marcar-entrada', async (req, res) => {
             return res.status(403).send({ message: 'No se puede registrar una nueva entrada mientras exista una entrada sin salida registrada.' });
         }
 
-        const horarios = await client.query('SELECT hora_inicio FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
+        const horarios = await client.query('SELECT hora_inicio, id_horario FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
         console.log('Horarios obtenidos de la DB:', horarios.rows);
 
         if (horarios.rows.length > 0) {
-            const horario = horarios.rows[0];
+            const horario = horarios.rows.find(h => h.id_horario === id_horario);
+            if (!horario) {
+                return res.status(404).send({ message: 'Horario no encontrado para el empleado en el día especificado.' });
+            }
             const ahora = moment(hora_entrada, 'HH:mm:ss').tz('Europe/Madrid');
             const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(30, 'minutes').tz('Europe/Madrid');
 
@@ -269,8 +267,8 @@ app.post('/marcar-entrada', async (req, res) => {
 
             if (ahora.isSameOrAfter(horaInicioPermitida)) {
                 const result = await client.query(
-                    'INSERT INTO registros_horarios (id_empleado, fecha, hora_entrada) VALUES ($1, $2, $3) RETURNING id_registro',
-                    [id_empleado, fecha, hora_entrada]
+                    'INSERT INTO registros_horarios (id_empleado, fecha, hora_entrada, id_horario) VALUES ($1, $2, $3, $4) RETURNING id_registro',
+                    [id_empleado, fecha, hora_entrada, id_horario]
                 );
                 console.log('Entrada marcada con éxito para el empleado', id_empleado);
                 res.send({ message: 'Entrada marcada con éxito', id_registro: result.rows[0].id_registro });
@@ -287,6 +285,8 @@ app.post('/marcar-entrada', async (req, res) => {
         res.status(500).send({ error: err.message });
     }
 });
+
+
 
 app.post('/marcar-salida', async (req, res) => {
     const { id_empleado, id_registro, hora_salida, horas_trabajadas, id_horario } = req.body;

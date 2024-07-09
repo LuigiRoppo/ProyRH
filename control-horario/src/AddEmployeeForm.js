@@ -68,7 +68,8 @@ function AddEmployeeForm() {
                     const entradaRespuesta = await marcarEntrada({
                         id_empleado: employeeId,
                         fecha,
-                        hora_entrada: horaEntrada
+                        hora_entrada: horaEntrada,
+                        id_horario: horario.id_horario  // Agregar id_horario al marcar entrada
                     });
                     console.log('Respuesta de la API:', entradaRespuesta);
                     setIdRegistro(entradaRespuesta.id); 
@@ -85,6 +86,7 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación');
         }
     };
+    
 
     const handleSalida = async () => {
         if (!employeeId) {
