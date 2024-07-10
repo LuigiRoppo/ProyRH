@@ -208,17 +208,17 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 }
 
                 const minutosAleatorios = Math.floor(Math.random() * 5) + 1; // Genera un número aleatorio entre 1 y 5
-                const horaFinPermitida = fechaHoraFin.add(minutosAleatorios, 'minutes');
+                const horaFinPermitida = fechaHoraFin.clone().add(minutosAleatorios, 'minutes');
                 console.log(`Hora fin permitida después de agregar ${minutosAleatorios} minutos:`, horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
                 if (ahora.isAfter(horaFinPermitida)) {
-                    const horaSalida = ahora.format('HH:mm:ss');
-                    const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, ahora.format('YYYY-MM-DD'), horaSalida);
+                    const horaSalida = horaFinPermitida.format('HH:mm:ss');  // La hora de salida será la hora permitida
+                    const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, fechaHoraFin.format('YYYY-MM-DD'), horaSalida);
 
                     console.log(`Calculando horas trabajadas (automático):`);
                     console.log(`Fecha de entrada: ${fecha}`);
                     console.log(`Hora de entrada: ${hora_entrada}`);
-                    console.log(`Fecha de salida: ${ahora.format('YYYY-MM-DD')}`);
+                    console.log(`Fecha de salida: ${fechaHoraFin.format('YYYY-MM-DD')}`);
                     console.log(`Hora de salida: ${horaSalida}`);
                     console.log(`Horas trabajadas: ${horasTrabajadas}`);
 
@@ -236,7 +236,8 @@ const verificarYActualizarRegistrosPendientes = async () => {
     }
 };
 
-setInterval(verificarYActualizarRegistrosPendientes, 30 * 60 * 1000);
+setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+
 
 
 
