@@ -54,30 +54,30 @@ function AddEmployeeForm() {
         try {
             const horarioArray = await getHorarioByEmpleadoId(employeeId);
             console.log('Horario:', horarioArray);
-            const diasSemana = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+            const diasSemana = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sábado"];
             const diaSemana = diasSemana[now.day()];
             const horariosDelDia = horarioArray.filter(h => h.dia_semana === diaSemana);
             console.log('Horarios del día:', horariosDelDia);
     
             if (horariosDelDia.length > 0) {
-                // Verificar cada horario del día
                 for (let i = 0; i < horariosDelDia.length; i++) {
                     const horario = horariosDelDia[i];
-                    
-                    // Verificar si ya existe una entrada para este horario en el mismo día
                     const registrosExistentes = await verificarRegistroExistente(employeeId, fecha, horario.id_horario);
+                    
                     if (registrosExistentes.length === 0) {
                         const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(30, 'minutes').tz('Europe/Madrid');
+                        const horaFinPermitida = moment(`${fecha}T${horario.hora_inicio}`).add(1, 'hour').tz('Europe/Madrid');
                         console.log('Horario seleccionado:', horario);
                         console.log('Hora de inicio permitida:', horaInicioPermitida.format('HH:mm')); 
+                        console.log('Hora de fin permitida:', horaFinPermitida.format('HH:mm'));
                         console.log('Hora actual:', now.format('HH:mm'));
     
-                        if (now.isSameOrAfter(horaInicioPermitida)) {
+                        if (now.isBetween(horaInicioPermitida, horaFinPermitida)) {
                             const entradaRespuesta = await marcarEntrada({
                                 id_empleado: employeeId,
                                 fecha,
                                 hora_entrada: horaEntrada,
-                                id_horario: horario.id_horario  // Asegúrate de enviar id_horario
+                                id_horario: horario.id_horario
                             });
                             console.log('Respuesta de la API:', entradaRespuesta);
                             setIdRegistro(entradaRespuesta.id); 
@@ -85,7 +85,7 @@ function AddEmployeeForm() {
                             resetForm();
                             return;
                         } else {
-                            alert(`No se permite marcar entrada antes de las ${horaInicioPermitida.format('HH:mm')} o después de las ${horario.hora_fin}`);
+                            alert(`No se permite marcar entrada antes de las ${horaInicioPermitida.format('HH:mm')} o después de las ${horaFinPermitida.format('HH:mm')}`);
                             return;
                         }
                     }
@@ -138,6 +138,7 @@ function AddEmployeeForm() {
             alert('Error al realizar la operación de salida');
         }
     };
+    
     
     
     

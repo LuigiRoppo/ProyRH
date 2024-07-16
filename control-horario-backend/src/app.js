@@ -188,7 +188,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
 
         for (const registro of registros.rows) {
             const { id_registro, id_empleado, fecha, hora_entrada, id_horario } = registro;
-            const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+            const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
             const diaSemana = new Date(fecha).getDay();
             const diaNombreOriginal = diaIndices[diaSemana];
             const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -212,7 +212,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 console.log(`Hora fin permitida después de agregar ${minutosAleatorios} minutos:`, horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
                 if (ahora.isAfter(horaFinPermitida)) {
-                    const horaSalida = horaFinPermitida.format('HH:mm:ss');  // La hora de salida será la hora permitida
+                    const horaSalida = fechaHoraFin.clone().add(minutosAleatorios, 'minutes').format('HH:mm:ss');  // La hora de salida será la hora permitida
                     const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, fechaHoraFin.format('YYYY-MM-DD'), horaSalida);
 
                     console.log(`Calculando horas trabajadas (automático):`);
@@ -247,7 +247,6 @@ setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
 
 
 
-
 app.post('/marcar-entrada', async (req, res) => {
     const { id_empleado, fecha, hora_entrada, id_horario } = req.body;
     console.log(`Datos recibidos para marcar entrada: ${JSON.stringify(req.body)}`);
@@ -257,6 +256,16 @@ app.post('/marcar-entrada', async (req, res) => {
     const diaNombre = diaIndices[diaSemana];
 
     try {
+        // Verificar si ya existe un registro de entrada para este horario en el mismo día
+        const registrosExistentes = await client.query(
+            'SELECT * FROM registros_horarios WHERE id_empleado = $1 AND fecha = $2 AND id_horario = $3',
+            [id_empleado, fecha, id_horario]
+        );
+
+        if (registrosExistentes.rows.length > 0) {
+            return res.status(403).send({ message: 'Ya se ha registrado una entrada para este horario hoy.' });
+        }
+
         const registrosPendientes = await client.query('SELECT * FROM registros_horarios WHERE id_empleado = $1 AND hora_salida IS NULL', [id_empleado]);
         if (registrosPendientes.rows.length > 0) {
             return res.status(403).send({ message: 'No se puede registrar una nueva entrada mientras exista una entrada sin salida registrada.' });
@@ -272,12 +281,14 @@ app.post('/marcar-entrada', async (req, res) => {
             }
             const ahora = moment(hora_entrada, 'HH:mm:ss').tz('Europe/Madrid');
             const horaInicioPermitida = moment(`${fecha}T${horario.hora_inicio}`).subtract(30, 'minutes').tz('Europe/Madrid');
+            const horaFinPermitida = moment(`${fecha}T${horario.hora_inicio}`).add(1, 'hour').tz('Europe/Madrid');
 
             console.log(`Horario seleccionado desde la DB: inicio=${horario.hora_inicio}`);
             console.log(`Hora actual: ${ahora.format('HH:mm:ss')}`);
             console.log(`Hora de inicio permitida: ${horaInicioPermitida.format('HH:mm:ss')}`);
+            console.log(`Hora de fin permitida: ${horaFinPermitida.format('HH:mm:ss')}`);
 
-            if (ahora.isSameOrAfter(horaInicioPermitida)) {
+            if (ahora.isBetween(horaInicioPermitida, horaFinPermitida)) {
                 const result = await client.query(
                     'INSERT INTO registros_horarios (id_empleado, fecha, hora_entrada, id_horario) VALUES ($1, $2, $3, $4) RETURNING id_registro',
                     [id_empleado, fecha, hora_entrada, horario.id_horario]
@@ -285,8 +296,8 @@ app.post('/marcar-entrada', async (req, res) => {
                 console.log('Entrada marcada con éxito para el empleado', id_empleado);
                 res.send({ message: 'Entrada marcada con éxito', id_registro: result.rows[0].id_registro });
             } else {
-                console.log('No se permite marcar entrada antes de los 30 minutos permitidos');
-                res.status(403).send({ message: 'No se permite marcar entrada antes de los 30 minutos permitidos' });
+                console.log('No se permite marcar entrada fuera del rango permitido');
+                res.status(403).send({ message: 'No se permite marcar entrada fuera del rango permitido' });
             }
         } else {
             console.log('Horario no encontrado para el empleado', id_empleado);
@@ -298,13 +309,14 @@ app.post('/marcar-entrada', async (req, res) => {
     }
 });
 
+
 app.post('/marcar-salida', async (req, res) => {
     const { id_empleado, id_registro, hora_salida, horas_trabajadas } = req.body;
     console.log(`Intentando marcar salida para el empleado con ID: ${id_empleado}`);
 
     try {
         const registro = await client.query(`
-            SELECT id_registro, fecha, hora_entrada 
+            SELECT id_registro, fecha, hora_entrada, id_horario 
             FROM registros_horarios 
             WHERE id_empleado = $1 AND id_registro = $2 AND hora_salida IS NULL 
             LIMIT 1
