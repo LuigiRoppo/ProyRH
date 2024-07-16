@@ -188,7 +188,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
 
         for (const registro of registros.rows) {
             const { id_registro, id_empleado, fecha, hora_entrada, id_horario } = registro;
-            const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+            const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
             const diaSemana = new Date(fecha).getDay();
             const diaNombreOriginal = diaIndices[diaSemana];
             const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
