@@ -188,7 +188,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
 
         for (const registro of registros.rows) {
             const { id_registro, id_empleado, fecha, hora_entrada, id_horario } = registro;
-            const diaIndices = ["Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"];
+            const diaIndices = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
             const diaSemana = new Date(fecha).getDay();
             const diaNombreOriginal = diaIndices[diaSemana];
             const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -212,7 +212,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
                 console.log(`Hora fin permitida después de agregar ${minutosAleatorios} minutos:`, horaFinPermitida.format('YYYY-MM-DD HH:mm:ss'));
 
                 if (ahora.isAfter(horaFinPermitida)) {
-                    const horaSalida = fechaHoraFin.clone().add(minutosAleatorios, 'minutes').format('HH:mm:ss');  // La hora de salida será la hora permitida
+                    const horaSalida = horaFinPermitida.format('HH:mm:ss');  // La hora de salida será la hora permitida
                     const horasTrabajadas = calcularHorasTrabajadas(fecha, hora_entrada, fechaHoraFin.format('YYYY-MM-DD'), horaSalida);
 
                     console.log(`Calculando horas trabajadas (automático):`);
@@ -237,6 +237,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
 };
 
 setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+
 
 
 
