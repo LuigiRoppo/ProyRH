@@ -39,7 +39,7 @@ function CreateEmployeeForm() {
                 className="form-element"
             >
                 <option value="">Seleccione una Ubicacion </option>
-                <option value="Ubicacion 1">Ourense </option>
+                <option value="Ourense">Ourense </option>
                 <option value="Ubicacion  2">Ubicacion  2</option>
                 <option value="Ubicacion  3">Ubicacion  3</option>
                 <option value="Ubicacion  4">Ubicacion  4</option>
