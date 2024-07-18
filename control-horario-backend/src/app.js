@@ -179,6 +179,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
     try {
         console.log("Iniciando verificación de registros pendientes...");
 
+        // Obtener registros pendientes (con entrada pero sin salida)
         const registros = await client.query(`
             SELECT id_registro, id_empleado, TO_CHAR(fecha, 'YYYY-MM-DD') as fecha, hora_entrada, id_horario 
             FROM registros_horarios 
@@ -193,9 +194,11 @@ const verificarYActualizarRegistrosPendientes = async () => {
             const diaNombreOriginal = diaIndices[diaSemana];
             const diaNombre = diaNombreOriginal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+            // Obtener horarios del empleado para el día específico
             const horarios = await client.query('SELECT hora_fin, id_horario FROM horarios WHERE id_empleado = $1 AND dia_semana = $2', [id_empleado, diaNombre]);
             console.log(`Horarios obtenidos para empleado ${id_empleado} en día ${diaNombre}:`, horarios.rows);
 
+            // Filtrar los horarios que tienen una entrada registrada (los pendientes de salida)
             const horarioAsociado = horarios.rows.find(horario => horario.id_horario === id_horario);
 
             if (horarioAsociado) {
@@ -236,7 +239,8 @@ const verificarYActualizarRegistrosPendientes = async () => {
     }
 };
 
-setInterval(verificarYActualizarRegistrosPendientes, 30 * 60 * 1000);
+setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+
 
 
 
