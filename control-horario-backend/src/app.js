@@ -239,7 +239,7 @@ const verificarYActualizarRegistrosPendientes = async () => {
     }
 };
 
-setInterval(verificarYActualizarRegistrosPendientes, 5 * 60 * 1000);
+setInterval(verificarYActualizarRegistrosPendientes, 30 * 60 * 1000);
 
 
 
